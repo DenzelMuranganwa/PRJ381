@@ -920,3 +920,355 @@ body[data-theme="light"] .theme-toggle { color:#334155; }
 html { scroll-behavior:smooth; }
 body[data-theme="light"] .auth-back-link { color:#556274; }
 body[data-theme="light"] .auth-back-link:hover { color:#252b85; }
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.mobile-body {
+  background-color: #0e1218;
+  color: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.map-screen-wrapper {
+  width: 100%;
+  max-width: 440px;
+  height: 100vh;
+  max-height: 870px;
+  background-color: #0e1218;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid #1c2432;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Top Floating Header Overlay */
+.map-top-overlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.map-back-btn {
+  width: 40px;
+  height: 40px;
+  background-color: rgba(18, 23, 32, 0.85);
+  border: 1px solid #232d3d;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.map-back-btn:hover {
+  background-color: #1a2230;
+  border-color: #7075f8;
+}
+
+.telemetry-pill-mini {
+  background-color: rgba(18, 23, 32, 0.85);
+  border: 1px solid #232d3d;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #8b98a9;
+  backdrop-filter: blur(8px);
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #00e599;
+  box-shadow: 0 0 8px rgba(0, 229, 153, 0.8);
+}
+
+/* Map Viewport */
+.map-viewport {
+  width: 100%;
+  height: 380px;
+  min-height: 380px;
+  position: relative;
+  background-color: #0c1016;
+  z-index: 1;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  background-color: #0c1016;
+}
+
+/* Dark Mode OpenStreetMap Tile Filters */
+.leaflet-container {
+  background-color: #0c1016 !important;
+}
+
+.leaflet-tile-pane {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+
+/* Bottom Sheet Panel */
+.bottom-sheet-panel {
+  flex: 1;
+  background-color: #121720;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  border-top: 1px solid #232d3d;
+  padding: 12px 16px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10;
+  overflow-y: auto;
+}
+
+.sheet-drag-handle {
+  width: 36px;
+  height: 4px;
+  background-color: #2b3648;
+  border-radius: 2px;
+  align-self: center;
+  margin-bottom: 2px;
+}
+
+/* Start Point / Location Pill */
+.location-pill-box {
+  background-color: #0e1218;
+  border: 1px solid #232d3d;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.location-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-sublabel {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #5c6879;
+  letter-spacing: 0.05em;
+}
+
+.location-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.sensor-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #00e599;
+}
+
+/* Destination Search Input Box */
+.destination-search-box {
+  background-color: #0e1218;
+  border: 1.5px solid #232d3d;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.2s ease;
+}
+
+.destination-search-box:focus-within {
+  border-color: #7075f8;
+}
+
+.destination-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.destination-input::placeholder {
+  color: #5c6879;
+}
+
+.clear-search-btn {
+  background: none;
+  border: none;
+  color: #5c6879;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: none;
+  padding: 0 4px;
+}
+
+.clear-search-btn:hover {
+  color: #ffffff;
+}
+
+/* Status & Energy Metrics Box */
+#statusMessage {
+  font-size: 0.75rem;
+  color: #e5a900;
+  min-height: 16px;
+}
+
+.route-summary-box {
+  display: none;
+  background-color: #0e1218;
+  border: 1px solid #232d3d;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: #8b98a9;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.route-summary-box .metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.route-summary-box b {
+  color: #00e599;
+}
+
+/* Saved Waypoints List */
+.places-list-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.places-section-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #5c6879;
+  letter-spacing: 0.08em;
+}
+
+.places-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.place-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  background-color: #0e1218;
+  border: 1px solid #1c2432;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.place-row:hover,
+.place-row.selected {
+  background-color: #161d27;
+  border-color: #7075f8;
+}
+
+.place-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #8b98a9;
+}
+
+.place-name {
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.place-distance {
+  color: #5c6879;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Fixed SVG Dimensions */
+svg.loc-icon,
+svg.place-icon,
+svg.search-icon {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Action Buttons & Links */
+.mobile-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  background-color: #7075f8;
+  color: #ffffff;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+  margin-top: 4px;
+}
+
+.mobile-btn:hover:not(:disabled) {
+  background-color: #5c61ea;
+}
+
+.mobile-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background-color: #3b3a7d;
+}
+
+.skip-action-link {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #7075f8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.skip-action-link:hover {
+  text-decoration: underline;
+}

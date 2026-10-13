@@ -1,6 +1,14 @@
 <link rel="stylesheet" href="/css.css" />
 <link rel="stylesheet" href="/integration.css" />
 
+<% 
+  const userObj = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+  const displayName = userObj ? (userObj.fullName || userObj.name || userObj.email) : null;
+  const avatarLetter = displayName ? displayName.charAt(0).toUpperCase() : '♙';
+  const vehicleName = userObj ? (userObj.vehicleNickname || 'IWOS-07') : 'IWOS-07';
+  const token = typeof csrfToken !== 'undefined' ? csrfToken : '';
+  const currentTheme = typeof themePreference !== 'undefined' ? themePreference : 'dark';
+%>
 
 <header class="iwos-topbar">
   <button type="button" id="menuToggle" class="nav-btn" aria-label="Open Navigation">
@@ -18,28 +26,29 @@
       <%= typeof pageTitle !== 'undefined' ? pageTitle : 'Telemetry Dashboard' %>
     </h1>
   </div>
+  
   <div class="topbar-actions">
     <details class="profile-menu">
       <summary class="profile-trigger" aria-label="Open profile menu">
-        <% if (currentUser && currentUser.profilePictureUrl) { %>
-          <img class="profile-avatar profile-avatar-image" src="<%= currentUser.profilePictureUrl %>" alt="">
+        <% if (userObj && userObj.profilePictureUrl) { %>
+          <img class="profile-avatar profile-avatar-image" src="<%= userObj.profilePictureUrl %>" alt="">
         <% } else { %>
-          <span class="profile-avatar"><%= currentUser ? currentUser.fullName.charAt(0).toUpperCase() : '♙' %></span>
+          <span class="profile-avatar"><%= avatarLetter %></span>
         <% } %>
-        <span class="profile-trigger-name"><%= currentUser ? currentUser.fullName : 'Guest' %></span>
+        <span class="profile-trigger-name"><%= displayName || 'Guest' %></span>
         <span class="profile-chevron" aria-hidden="true">⌄</span>
       </summary>
       <div class="profile-dropdown">
-        <% if (currentUser) { %>
+        <% if (userObj) { %>
           <div class="profile-identity">
-            <strong><%= currentUser.fullName %></strong>
-            <span><%= currentUser.email %></span>
+            <strong><%= displayName %></strong>
+            <span><%= userObj.email %></span>
           </div>
           <a href="/settings" class="profile-menu-link">Personalization &amp; Settings</a>
           <form class="profile-picture-form" method="post" action="/settings/avatar">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="_csrf" value="<%= token %>">
             <label for="profilePictureUrl">Profile picture URL</label>
-            <input id="profilePictureUrl" name="profilePictureUrl" type="url" inputmode="url" placeholder="https://…" maxlength="2048" value="<%= currentUser.profilePictureUrl || '' %>">
+            <input id="profilePictureUrl" name="profilePictureUrl" type="url" inputmode="url" placeholder="https://…" maxlength="2048" value="<%= userObj.profilePictureUrl || '' %>">
             <button type="submit" class="profile-picture-save">Save picture</button>
           </form>
         <% } else { %>
@@ -50,25 +59,26 @@
           <a href="/signup" class="profile-menu-link">Sign In</a>
           <a href="/register" class="profile-menu-link">Register</a>
         <% } %>
+        
         <div class="theme-switcher">
           <span>Appearance</span>
-          <button type="button" class="theme-toggle" data-theme-toggle data-csrf="<%= csrfToken %>" aria-pressed="<%= themePreference === 'light' ? 'true' : 'false' %>">
-            <span class="theme-toggle-label"><%= themePreference === 'light' ? 'Light Mode' : 'Dark Mode' %></span>
+          <button type="button" class="theme-toggle" data-theme-toggle data-csrf="<%= token %>" aria-pressed="<%= currentTheme === 'light' ? 'true' : 'false' %>">
+            <span class="theme-toggle-label"><%= currentTheme === 'light' ? 'Light Mode' : 'Dark Mode' %></span>
             <span class="theme-toggle-track" aria-hidden="true"><span></span></span>
           </button>
           <span class="theme-error" data-theme-error role="status" hidden></span>
         </div>
-        <% if (currentUser) { %>
+        
+        <% if (userObj) { %>
           <a href="/logout" class="profile-menu-link profile-logout">Sign Out</a>
         <% } %>
       </div>
     </details>
-    <% if (!currentUser) { %><a class="auth-nav-link auth-nav-primary" href="/signup">Sign In</a><% } %>
+    <% if (!userObj) { %><a class="auth-nav-link auth-nav-primary" href="/signup">Sign In</a><% } %>
   </div>
 </header>
 
 <div id="drawerOverlay" class="drawer-overlay"></div>
-
 
 <aside id="sidebarDrawer" class="sidebar-drawer">
   <div class="drawer-header">
@@ -80,6 +90,7 @@
   </div>
 
   <nav class="sidebar-nav" aria-label="Main Navigation">
+    <!-- Live Status / Dashboard -->
     <a 
       href="/dashboard" 
       class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'dashboard') ? 'active' : '' %>"
@@ -90,6 +101,18 @@
       <span>Live Status</span>
     </a>
 
+    <!-- Route Setup Navigation -->
+    <a 
+      href="/route-setup" 
+      class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'route-setup') ? 'active' : '' %>"
+    >
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+      </svg>
+      <span>Route Setup</span>
+    </a>
+
+    <!-- Sync & Logs -->
     <a 
       href="/sync-sessions" 
       class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'sync') ? 'active' : '' %>"
@@ -99,20 +122,38 @@
       </svg>
       <span>Sync &amp; Logs</span>
     </a>
-    <a href="/dashboard#optimization-section" class="nav-link"><span class="nav-icon">✧</span><span>AI Optimisation</span></a>
-    <% if (currentUser) { %>
-      <a href="/settings" class="nav-link"><span class="nav-icon">⚙</span><span>Personalization</span></a>
-      <a href="/logout" class="nav-link nav-signout"><span class="nav-icon">↪</span><span>Sign Out</span></a>
+
+    <!-- AI Optimisation Anchor -->
+    <a href="/dashboard#optimization-section" class="nav-link">
+      <span class="nav-icon">✧</span>
+      <span>AI Optimisation</span>
+    </a>
+
+    <% if (userObj) { %>
+      <a href="/settings" class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'settings') ? 'active' : '' %>">
+        <span class="nav-icon">⚙</span>
+        <span>Personalization</span>
+      </a>
+      <a href="/logout" class="nav-link nav-signout">
+        <span class="nav-icon">↪</span>
+        <span>Sign Out</span>
+      </a>
     <% } else { %>
-      <a href="/signup" class="nav-link"><span class="nav-icon">↪</span><span>Sign In</span></a>
-      <a href="/register" class="nav-link"><span class="nav-icon">＋</span><span>Create Account</span></a>
+      <a href="/signup" class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'signup') ? 'active' : '' %>">
+        <span class="nav-icon">↪</span>
+        <span>Sign In</span>
+      </a>
+      <a href="/register" class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'register') ? 'active' : '' %>">
+        <span class="nav-icon">＋</span>
+        <span>Create Account</span>
+      </a>
     <% } %>
   </nav>
 
   <div class="sidebar-footer-card">
     <div class="card-top-row">
       <div class="vehicle-identity">
-        <strong class="vehicle-code"><%= currentUser ? (currentUser.vehicleNickname || 'IWOS-07') : 'IWOS-07' %></strong>
+        <strong class="vehicle-code"><%= vehicleName %></strong>
         <span class="lead-pill">LEAD</span>
       </div>
       <div class="battery-metric">
@@ -120,7 +161,7 @@
           <rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect>
           <line x1="22" y1="11" x2="22" y2="13"></line>
         </svg>
-        <span class="battery-value" data-battery>—</span>
+        <span class="battery-value" data-battery><%= typeof batteryLevel !== 'undefined' ? batteryLevel + '%' : '—' %></span>
       </div>
     </div>
     

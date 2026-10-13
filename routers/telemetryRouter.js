@@ -131,15 +131,207 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
   });
 
   router.get('/dashboard', (req, res) => {
-    res.render('pages/Dashboard', { activePage: 'dashboard' });
+    res.render('pages/Dashboard', { 
+      activePage: 'dashboard',
+      pageTitle: 'Telemetry Dashboard',
+      dynamics: { lat: '-25.7479', lng: '28.2293', speed: 13, logToday: 0 }
+    });
   });
 
   router.get('/sync-sessions', authenticated, (req, res) => {
     res.render('pages/Sync&Sessions', { activePage: 'sync', pageTitle: 'Sync & Logs' });
   });
 
-  router.get('/route-setup', authenticated, (req, res) => {
-    res.render('pages/route-setUp', { activePage: 'route', pageTitle: 'Route Setup' });
+  // 1. ROUTE SETUP PAGE: Passes position and default markers
+  router.get('/route-setup', (req, res) => {
+    res.render('pages/route-setUp', {
+      pageTitle: 'Route Navigation - IWOS',
+      activePage: 'route-setup',
+      initLat: -25.7479,
+      initLng: 28.2293,
+      windSpeed: 13,
+      piPosition: {
+        lat: '-25.7479',
+        lng: '28.2293',
+        lastSeen: new Date(),
+        windKmh: 13,
+        tempC: 25,
+        irradiance: 850
+      },
+      savedPlaces: [
+        { name: 'Kempton Park Hub', coords: '-26.1325, 28.2312', distance: 'Sector 1' },
+        { name: 'Pretoria Proving Loop', coords: '-25.7479, 28.2293', distance: 'Sector 2' }
+      ]
+    });
+  });
+
+  // 2. LIVE PI GPS POLLING API
+  router.get('/api/vehicle/gps', (req, res) => {
+    res.json({
+      latitude: '-25.7479',
+      longitude: '28.2293',
+      wind_speed_ms: 3.6,
+      temperature_c: 25,
+      timestamp: new Date()
+    });
+  });
+
+  // 3. SOLAR ROUTE CALCULATION API: OSRM with Steps + Komoot/Photon + Physics Engine
+  router.post('/api/calculate-solar-route', async (req, res) => {
+    const { startLat, startLng, destination, headwind } = req.body || {};
+
+    if (!startLat || !startLng || !destination) {
+      return res.status(400).json({ success: false, error: 'Start coordinates and destination are required' });
+    }
+
+    try {
+      let destLat, destLng;
+      const destStr = destination.trim();
+
+      // Check for coordinate format (e.g. "-25.76746, 28.23726")
+      const coordMatch = destStr.match(/^([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)$/);
+      if (coordMatch) {
+        destLat = parseFloat(coordMatch[1]);
+        destLng = parseFloat(coordMatch[2]);
+      } else {
+        // Geocode with Komoot / Photon
+        let resolved = false;
+        try {
+          const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(destStr)}&limit=1`;
+          const photonRes = await fetch(photonUrl, {
+            headers: { 'User-Agent': 'IWOS-SolarVehicleTracker/1.0' }
+          });
+          if (photonRes.ok) {
+            const photonData = await photonRes.json();
+            if (photonData?.features?.length > 0) {
+              const [lon, lat] = photonData.features[0].geometry.coordinates;
+              destLat = lat;
+              destLng = lon;
+              resolved = true;
+            }
+          }
+        } catch (e) {
+          console.warn('Photon fallback:', e.message);
+        }
+
+        // Fallback to Nominatim
+        if (!resolved) {
+          const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destStr)}`;
+          const nomRes = await fetch(nomUrl, {
+            headers: {
+              'User-Agent': 'IWOS-TelemetryApp-V2/1.0 (telemetry-contact@iwos.org)',
+              'Accept': 'application/json'
+            }
+          });
+          const nomData = await nomRes.json();
+          if (!nomData || !nomData.length) {
+            throw new Error(`Could not find destination: "${destStr}"`);
+          }
+          destLat = parseFloat(nomData[0].lat);
+          destLng = parseFloat(nomData[0].lon);
+        }
+      }
+
+      // Fetch driving route from OSRM with steps=true for navigation maneuvers
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true&alternatives=true`;
+      const osrmRes = await fetch(osrmUrl, {
+        headers: { 'User-Agent': 'IWOS-SolarVehicleTracker/1.0' }
+      });
+      const osrmData = await osrmRes.json();
+
+      if (osrmData.code !== 'Ok' || !osrmData.routes?.length) {
+        return res.status(404).json({ success: false, error: 'No driving route found.' });
+      }
+
+      // Solar Car Physics
+      const carMass = 280;
+      const panelArea = 4.0;
+      const irradiance = 850;
+      const windSpeedKmh = parseFloat(headwind) || 0;
+      const rho = 1.2;
+      const cdA = 0.14;
+      const crr = 0.0035;
+      const g = 9.81;
+      const motorEff = 0.90;
+      const panelEff = 0.22;
+
+      const evaluatedRoutes = [];
+
+      for (let i = 0; i < osrmData.routes.length; i++) {
+        const r = osrmData.routes[i];
+        const durationSec = r.duration;
+        const distanceM = r.distance;
+        const avgSpeedMS = distanceM / durationSec;
+
+        let elevationGain = 0;
+        try {
+          const sampled = r.geometry.coordinates.filter((_, idx) => idx % 10 === 0);
+          const lats = sampled.map(c => c[1]).join(',');
+          const lons = sampled.map(c => c[0]).join(',');
+          const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`);
+          if (elevRes.ok) {
+            const elevData = await elevRes.json();
+            const arr = elevData.elevation || [];
+            for (let j = 1; j < arr.length; j++) {
+              const diff = arr[j] - arr[j - 1];
+              if (diff > 0) elevationGain += diff;
+            }
+          }
+        } catch {
+          elevationGain = 0;
+        }
+
+        const airSpeedMS = avgSpeedMS + ((windSpeedKmh * 1000) / 3600);
+        const pAero = 0.5 * rho * cdA * Math.pow(airSpeedMS, 2) * avgSpeedMS;
+        const pRoll = carMass * g * crr * avgSpeedMS;
+        const pElevationWork = carMass * g * elevationGain;
+
+        const totalConsumedJoules = ((pAero + pRoll) * durationSec + pElevationWork) / motorEff;
+        const consumedKWh = totalConsumedJoules / 3.6e6;
+
+        const pSolarWatts = panelArea * irradiance * panelEff;
+        const generatedJoules = pSolarWatts * durationSec;
+        const generatedKWh = generatedJoules / 3.6e6;
+
+        const netKWh = (consumedKWh - generatedKWh).toFixed(2);
+
+        // Extract maneuver steps
+        const steps = (r.legs && r.legs[0] && r.legs[0].steps) ? r.legs[0].steps.map(s => ({
+          instruction: s.maneuver.instruction || (s.maneuver.type + ' ' + (s.maneuver.modifier || '')),
+          type: s.maneuver.type,
+          modifier: s.maneuver.modifier,
+          name: s.name || '',
+          distance: Math.round(s.distance),
+          duration: Math.round(s.duration),
+          location: [s.maneuver.location[1], s.maneuver.location[0]]
+        })) : [];
+
+        evaluatedRoutes.push({
+          track: i + 1,
+          distanceKm: (distanceM / 1000).toFixed(1),
+          durationMin: Math.round(durationSec / 60),
+          elevationGainM: Math.round(elevationGain),
+          netBatteryDrain: netKWh,
+          consumedKWh: consumedKWh.toFixed(2),
+          solarGeneratedKWh: generatedKWh.toFixed(2),
+          steps: steps,
+          coordinates: r.geometry.coordinates.map(([lon, lat]) => [lat, lon])
+        });
+      }
+
+      evaluatedRoutes.sort((a, b) => parseFloat(a.netBatteryDrain) - parseFloat(b.netBatteryDrain));
+
+      res.json({
+        success: true,
+        origin: [parseFloat(startLat), parseFloat(startLng)],
+        destination: [destLat, destLng],
+        routes: evaluatedRoutes
+      });
+
+    } catch (error) {
+      console.error('Route calculation error:', error.message);
+      res.status(500).json({ success: false, error: error.message || 'Route calculation failed' });
+    }
   });
 
   return router;

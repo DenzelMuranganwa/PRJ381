@@ -8,6 +8,18 @@ const { createApiRouter } = require('./routers/apiRouter');
 const { createTelemetryRouter } = require('./routers/telemetryRouter');
 const { UserStore } = require('./services/userStore');
 
+// If your custom router file is located at ./routes/index.js (or ./routes/routes.js), require it:
+let customRouter = null;
+try {
+  customRouter = require('./routes/index'); // Adjust if your file is named ./routes.js or similar
+} catch (e) {
+  try {
+    customRouter = require('./routes');
+  } catch (err) {
+    // If it's located elsewhere, require the exact path
+  }
+}
+
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 10, parts: 12 },
@@ -27,8 +39,13 @@ function createApp(config, store, userStore = new UserStore()) {
   const app = express();
   app.disable('x-powered-by');
   if (config.isProduction) app.set('trust proxy', 1);
-  app.set('view engine', 'ejs'); app.set('views', config.root);
+  app.set('view engine', 'ejs'); 
+  app.set('views', config.root);
+
+  // 1. CRITICAL: Enable JSON parsing so /api/calculate-solar-route receives req.body
+  app.use(express.json());
   app.use(express.urlencoded({ extended: false, limit: '16kb' }));
+
   app.use(session({
     name: 'iwos.sid',
     secret: config.sessionSecret || randomBytes(32).toString('hex'),
@@ -41,6 +58,7 @@ function createApp(config, store, userStore = new UserStore()) {
       maxAge: 8 * 60 * 60 * 1000,
     },
   }));
+
   const pageRoutes = new Set(['/', '/signup', '/signin', '/register', '/settings', '/dashboard', '/sync-sessions', '/route-setup']);
   app.use((req, res, next) => {
     if (!pageRoutes.has(req.path)) return next();
@@ -50,9 +68,18 @@ function createApp(config, store, userStore = new UserStore()) {
     res.locals.themePreference = req.session.user?.themePreference || req.session.themePreference || 'dark';
     next();
   });
+
   app.use(express.static(path.join(config.root, 'public')));
+
+  // 2. Mount your custom router (where /route-setup and /api/calculate-solar-route live)
+  if (customRouter) {
+    app.use('/', customRouter);
+  }
+
+  // 3. Existing application routers
   app.use('/api', createApiRouter(store, config));
   app.use('/', createTelemetryRouter(userStore, avatarUpload.single('avatar'), path.join(config.root, 'public')));
+
   app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
     const status = error.status || (error instanceof multer.MulterError ? 400 : 500);
@@ -61,6 +88,8 @@ function createApp(config, store, userStore = new UserStore()) {
       : error.type === 'entity.parse.failed' ? 'Malformed JSON' : error.message;
     res.status(status).json({ error: status >= 500 ? 'Internal server error' : message });
   });
+
   return app;
 }
+
 module.exports = { createApp };

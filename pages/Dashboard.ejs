@@ -4,21 +4,143 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IWOS Field - Telemetry Dashboard</title>
-  <link rel="stylesheet" href="/css.css" />
-</head>
-<body data-theme="<%= themePreference %>" data-authenticated="<%= currentUser ? 'true' : 'false' %>">
-
   
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/css.css" />
+  <link rel="stylesheet" href="/integration.css" />
+
+  <style>
+    /* Navigation Map Box */
+    .map-widget-wrapper {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      min-height: 380px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid #1c2432;
+      background: #0c1016;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    #dashboard-map {
+      width: 100%;
+      height: 100%;
+      background: #0c1016;
+    }
+
+    /* Google Maps-Style Turn-by-Turn Top HUD */
+    .nav-hud-top {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(17, 23, 34, 0.95);
+      border: 1.5px solid #283548;
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-maneuver-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: #00e599;
+      color: #0b111a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .nav-direction-text {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .nav-maneuver-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-maneuver-sub {
+      font-size: 0.72rem;
+      color: #8b98a9;
+      margin-top: 2px;
+    }
+
+    /* Google Maps-Style Trip Status Bottom Bar */
+    .nav-hud-bottom {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(17, 23, 34, 0.95);
+      border: 1px solid #283548;
+      border-radius: 12px;
+      padding: 9px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-stats-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav-eta {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #00e599;
+    }
+
+    .nav-metrics {
+      font-size: 0.72rem;
+      color: #8b98a9;
+    }
+
+    .nav-exit-btn {
+      background: #ef4444;
+      border: none;
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .nav-exit-btn:hover {
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body data-theme="<%= typeof themePreference !== 'undefined' ? themePreference : 'dark' %>" data-authenticated="<%= currentUser ? 'true' : 'false' %>">
+
   <%- include('../partials/header', { activePage: 'dashboard' }) %>
 
- 
   <div class="app-main-layout">
-    
-   
-
     <main class="page-container">
 
-      
+      <!-- Section 1: Live Telemetry Feed -->
       <section class="telemetry-section">
         <h3 class="section-title">TELEMETRY FEED</h3>
 
@@ -78,7 +200,7 @@
         </div>
       </section>
 
-      <!-- Section 2: Vehicle Dynamics & Track Position -->
+      <!-- Section 2: Vehicle Dynamics & Live Map Navigation -->
       <section class="telemetry-section">
         <h3 class="section-title">VEHICLE DYNAMICS &amp; TRACK POSITION</h3>
 
@@ -108,20 +230,22 @@
               </svg>
               <span data-value="gps">Waiting for a GPS fix</span>
             </div>
+
+            <div style="margin-top: 14px;">
+              <a href="/route-setup" class="mobile-btn" style="display: inline-block; text-align: center; text-decoration: none; padding: 8px 16px; font-size: 0.8rem; background: #7075f8; color: #fff; border-radius: 8px; font-weight: 600;">
+                Set / Change Route
+              </a>
+            </div>
           </div>
 
           <div class="dynamics-divider"></div>
 
+          <!-- Dynamic Leaflet Map Container -->
           <div class="dynamics-map-side">
-            <div class="track-canvas-container">
-              <svg class="track-svg" id="gps-track" viewBox="0 0 700 240" role="img" aria-label="Recent measured GPS positions">
-                <path d="M20 60H680 M20 120H680 M20 180H680 M175 20V220 M350 20V220 M525 20V220" stroke="#1e2633" fill="none"/>
-                <polyline id="gps-line" points="" fill="none" stroke="#00e599" stroke-width="3"/>
-                <circle id="gps-point" r="5" fill="#00e5ff" visibility="hidden"/>
-                <text id="gps-empty" x="350" y="125" text-anchor="middle" fill="#94a3b8" font-size="16">Waiting for GPS positions</text>
-              </svg>
-              <p class="sensor-note">Recent GPS trace · relative position, not a road map</p>
+            <div class="map-widget-wrapper">
+              <div id="dashboard-map"></div>
             </div>
+            <p class="sensor-note" style="margin-top: 6px;">Real-time GPS track &amp; active solar navigation overlay</p>
           </div>
         </div>
       </section>
@@ -131,5 +255,130 @@
   </div>
 
   <%- include('../partials/footer') %>
+
+  <!-- Leaflet Map & Navigation Engine Script -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const mapContainer = document.getElementById('dashboard-map');
+      if (!mapContainer) return;
+
+      const fallbackLat = -25.7479;
+      const fallbackLng = 28.2293;
+
+      // Initialize Leaflet Map
+      const map = L.map('dashboard-map', { zoomControl: false }).setView([fallbackLat, fallbackLng], 14);
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+
+      setTimeout(() => map.invalidateSize(), 200);
+
+      // Live Vehicle Marker
+      const carIcon = L.divIcon({
+        className: 'custom-car-marker',
+        html: `<div style="width: 14px; height: 14px; background: #00e599; border: 2.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 12px #00e599;"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+      const carMarker = L.marker([fallbackLat, fallbackLng], { icon: carIcon }).addTo(map);
+
+      // Check for active navigation from localStorage
+      const savedTrip = localStorage.getItem('activeSolarNavigation');
+      if (savedTrip) {
+        try {
+          const navData = JSON.parse(savedTrip);
+
+          if (navData.isActive && navData.coordinates && navData.coordinates.length > 0) {
+            // Render Route Polyline
+            const polyline = L.polyline(navData.coordinates, {
+              color: '#7075f8',
+              weight: 6,
+              opacity: 0.95
+            }).addTo(map);
+
+            // Render Destination Marker
+            const destMarker = L.circleMarker(navData.destinationCoords, {
+              radius: 8,
+              color: '#7075f8',
+              fillColor: '#ffffff',
+              fillOpacity: 1,
+              weight: 3
+            }).addTo(map);
+
+            map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+
+            function getManeuverArrow(modifier) {
+              if (!modifier) return '↑';
+              if (modifier.includes('right')) return '↱';
+              if (modifier.includes('left')) return '↰';
+              if (modifier.includes('u-turn')) return '↶';
+              return '↑';
+            }
+
+            const firstStep = (navData.steps && navData.steps.length > 1) 
+              ? navData.steps[1] 
+              : (navData.steps && navData.steps[0]) || { name: navData.destinationName, distance: 500 };
+
+            // Build Google Maps-style Top Turn HUD
+            const topHud = document.createElement('div');
+            topHud.className = 'nav-hud-top';
+            topHud.innerHTML = `
+              <div class="nav-maneuver-icon">${getManeuverArrow(firstStep.modifier)}</div>
+              <div class="nav-direction-text">
+                <div class="nav-maneuver-title">${firstStep.name ? ('In ' + firstStep.distance + 'm, on ' + firstStep.name) : ('Head toward ' + navData.destinationName)}</div>
+                <div class="nav-maneuver-sub">Solar-Optimized Route Active</div>
+              </div>
+            `;
+
+            // Build Google Maps-style Bottom Status Bar
+            const bottomHud = document.createElement('div');
+            bottomHud.className = 'nav-hud-bottom';
+            bottomHud.innerHTML = `
+              <div class="nav-stats-col">
+                <span class="nav-eta">~${navData.durationMin} mins (${navData.distanceKm} km)</span>
+                <span class="nav-metrics">Net Solar Drain: ${navData.netBatteryDrain} kWh • Lead Vehicle</span>
+              </div>
+              <button id="exitNavBtn" class="nav-exit-btn">Exit Nav</button>
+            `;
+
+            mapContainer.parentElement.appendChild(topHud);
+            mapContainer.parentElement.appendChild(bottomHud);
+
+            document.getElementById('exitNavBtn').addEventListener('click', () => {
+              localStorage.removeItem('activeSolarNavigation');
+              topHud.remove();
+              bottomHud.remove();
+              map.removeLayer(polyline);
+              map.removeLayer(destMarker);
+              map.setView([fallbackLat, fallbackLng], 14);
+            });
+          }
+        } catch (err) {
+          console.error('Error loading navigation data:', err);
+        }
+      }
+
+      // Sync vehicle marker if your client-side SSE / WebSocket updates GPS coordinates
+      const gpsObserver = new MutationObserver(() => {
+        const gpsEl = document.querySelector('[data-value="gps"]');
+        if (!gpsEl) return;
+        const text = gpsEl.textContent.trim();
+        const coords = text.match(/^([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)$/);
+        if (coords) {
+          const lat = parseFloat(coords[1]);
+          const lng = parseFloat(coords[2]);
+          carMarker.setLatLng([lat, lng]);
+        }
+      });
+
+      const gpsElement = document.querySelector('[data-value="gps"]');
+      if (gpsElement) {
+        gpsObserver.observe(gpsElement, { childList: true, characterData: true, subtree: true });
+      }
+    });
+  </script>
 </body>
 </html>
