@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Create Account | IWOS Field</title>
+  <link rel="stylesheet" href="/css.css">
+</head>
+<body class="auth-page" data-theme="dark">
+  <main class="auth-shell">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <a class="auth-brand" href="/signup" aria-label="IWOS Field sign in">
+        <span class="brand-square"></span><span class="badge-text">IWOS FIELD</span>
+      </a>
+      <a class="auth-back-link" href="/dashboard" aria-label="Back to Dashboard"><span aria-hidden="true">←</span> Back to Dashboard</a>
+      <div class="auth-heading">
+        <span class="auth-eyebrow">GET STARTED</span>
+        <h1 id="auth-title">Create your account</h1>
+        <p>Set up your profile to personalize your telemetry workspace.</p>
+      </div>
+      <% if (error) { %><p class="auth-alert" role="alert"><%= error %></p><% } %>
+      <form class="auth-form" method="post" action="/register" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label for="fullName">Full name</label>
+        <input id="fullName" name="fullName" type="text" autocomplete="name" minlength="2" maxlength="80" value="<%= values.fullName || '' %>" required>
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" autocomplete="email" maxlength="254" value="<%= values.email || '' %>" required>
+        <label for="password">Password</label>
+        <div class="password-field">
+          <input id="password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="72" aria-describedby="password-strength" required>
+          <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password">Show</button>
+        </div>
+        <div class="strength-track" aria-hidden="true"><span id="strength-bar"></span></div>
+        <p id="password-strength" class="strength-caption" aria-live="polite">Use 10+ characters with uppercase, lowercase, and a number.</p>
+        <label for="vehicleNickname">Vehicle nickname</label>
+        <input id="vehicleNickname" name="vehicleNickname" type="text" autocomplete="off" maxlength="40" value="<%= values.vehicleNickname || '' %>" required>
+        <label for="avatar">Profile picture <span class="auth-optional">(optional, max 5 MB)</span></label>
+        <input id="avatar" name="avatar" type="file" accept="image/*" aria-describedby="avatar-help">
+        <p id="avatar-help" class="strength-caption">JPEG, PNG, GIF, or WebP.</p>
+        <button class="auth-submit" type="submit">Create Account</button>
+      </form>
+      <p class="auth-switch">Already registered? <a href="/signup">Sign in</a></p>
+    </section>
+  </main>
+  <script src="/auth.js" defer></script>
+</body>
+</html>

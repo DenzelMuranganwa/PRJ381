@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personalization | IWOS Field</title>
+  <link rel="stylesheet" href="/css.css">
+  <link rel="stylesheet" href="/integration.css">
+</head>
+<body data-theme="<%= themePreference %>" data-authenticated="true">
+  <%- include('../partials/header', { pageTitle: 'Personalization' }) %>
+  <div class="app-main-layout">
+    <main class="page-container settings-container">
+      <section class="settings-card">
+        <span class="auth-eyebrow">YOUR ACCOUNT</span>
+        <h2>Personalization</h2>
+        <p class="settings-intro">Update the profile details shown in your IWOS workspace.</p>
+        <% if (saved) { %><p class="settings-success" role="status">Your profile has been updated.</p><% } %>
+        <% if (error) { %><p class="auth-alert" role="alert"><%= error %></p><% } %>
+        <form class="auth-form" method="post" action="/settings" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label for="fullName">Full name</label>
+          <input id="fullName" name="fullName" type="text" autocomplete="name" minlength="2" maxlength="80" value="<%= currentUser.fullName %>" required>
+          <label for="email">Email address</label>
+          <input id="email" type="email" value="<%= currentUser.email %>" readonly>
+          <label for="vehicleNickname">Vehicle nickname</label>
+          <input id="vehicleNickname" name="vehicleNickname" type="text" maxlength="40" value="<%= currentUser.vehicleNickname %>" required>
+          <label for="avatar">Upload profile picture <span class="auth-optional">(optional, max 5 MB)</span></label>
+          <input id="avatar" name="avatar" type="file" accept="image/*">
+          <button class="auth-submit" type="submit">Save Profile</button>
+        </form>
+      </section>
+    </main>
+  </div>
+  <%- include('../partials/footer') %>
+</body>
+</html>

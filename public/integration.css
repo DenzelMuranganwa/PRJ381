@@ -1,0 +1,43 @@
+/* Integration additions only. Original theme and component styles live in css.css. */
+.sensor-status-row, .sensor-secondary, .sensor-section-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.sensor-status-row { margin-bottom:16px; color:#94a3b8; font-size:.85rem; }
+.sensor-pill { display:inline-flex; border:1px solid #334155; border-radius:20px; padding:5px 12px; color:#fbbf24; font-weight:600; }
+.sensor-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#64748b; flex-shrink:0; }
+body[data-feed="live"] .sensor-dot { background:#00e599; }
+body[data-feed="live"] .sensor-pill { color:#00e599; border-color:#145c4b; }
+body[data-feed="stale"] .sensor-dot, body[data-feed="offline"] .sensor-dot { background:#fbbf24; }
+.sensor-note { color:#94a3b8; font-size:.76rem; line-height:1.5; margin-top:7px; }
+.sensor-secondary { border-bottom:1px solid #1e2633; padding:14px 0; color:#94a3b8; font-size:.8rem; gap:14px 28px; }
+.sensor-secondary strong { color:#e2e8f0; font-weight:500; }
+.sensor-section-heading { justify-content:space-between; margin-bottom:12px; }
+.sensor-section-heading .section-title { margin:0; }
+.optimization-panel { display:grid; grid-template-columns:minmax(220px,1fr) minmax(0,2fr); background:#12171f; border:1px solid #1e2633; border-radius:12px; padding:20px; gap:20px; }
+.sensor-eyebrow, .optimization-metric h4, .prediction-card h4 { font-size:.68rem; letter-spacing:.07em; color:#94a3b8; font-weight:600; }
+.optimization-summary h2 { color:#00e599; font-size:1.5rem; margin:12px 0; }
+.optimization-summary p, .optimization-summary li { font-size:.82rem; line-height:1.65; color:#b8c3d3; }
+.optimization-summary ul { padding-left:18px; margin-top:10px; }
+.optimization-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.optimization-metric { padding:14px; background:#0b0f15; border:1px solid #263142; border-radius:8px; min-width:0; }
+.optimization-metric strong { display:block; font-size:1.1rem; color:#f1f5f9; margin:10px 0 6px; overflow-wrap:anywhere; }
+.optimization-metric p { color:#94a3b8; font-size:.68rem; line-height:1.5; }
+.sensor-missing { margin-top:12px; padding:12px 16px; border-left:3px solid #fbbf24; background:#171b22; color:#cbd5e1; font-size:.8rem; line-height:1.6; }
+.prediction-heading { margin-top:24px; }
+.prediction-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+.prediction-card strong { display:inline-block; margin-top:12px; font-size:1.5rem; }
+.sensor-method { color:#94a3b8; font-size:.73rem; line-height:1.6; margin-top:14px; }
+.sensor-table-scroll { overflow:auto; }
+.track-canvas-container { min-width:0; flex-direction:column; }
+.track-canvas-container .sensor-note { text-align:center; }
+#gps-track { width:100%; height:auto; max-height:200px; }
+#optimization-section { scroll-margin-top:100px; }
+.sensor-live-log { margin-bottom:30px; }
+@media(max-width:1000px) { .optimization-panel { grid-template-columns:1fr; } }
+@media(max-width:600px) {
+  .optimization-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .optimization-metric { padding:12px; }
+  .optimization-metric strong { font-size:.875rem; }
+  .prediction-grid { grid-template-columns:1fr; }
+  .optimization-panel { padding:14px; }
+  .footer-container { flex-wrap:wrap; gap:10px; }
+  .sensor-secondary { align-items:flex-start; flex-direction:column; }
+}

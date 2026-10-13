@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IWOS Field - Telemetry Dashboard</title>
+  <link rel="stylesheet" href="/css.css" />
+</head>
+<body data-theme="<%= themePreference %>" data-authenticated="<%= currentUser ? 'true' : 'false' %>">
+
+  
+  <%- include('../partials/header', { activePage: 'dashboard' }) %>
+
+ 
+  <div class="app-main-layout">
+    
+   
+
+    <main class="page-container">
+
+      
+      <section class="telemetry-section">
+        <h3 class="section-title">TELEMETRY FEED</h3>
+
+        <% const feeds = [
+          {key:'irradiance', label:'Irradiance', unit:'W/m²', color:'val-amber', icon:'sun'},
+          {key:'temperature', label:'Atmos', unit:'°C', color:'val-blue', icon:'thermometer'},
+          {key:'wind', label:'Wind', unit:'km/h', color:'val-cyan', icon:'wind'},
+          {key:'rainfall', label:'Rainfall', unit:'mm/h', color:'val-red', icon:'droplet'}
+        ]; %>
+        <div class="sensor-status-row" role="status" aria-live="polite">
+          <span class="sensor-pill" data-feed-state>Waiting</span>
+          <span data-feed-detail>Connecting to dashboard…</span>
+        </div>
+        <noscript>Enable JavaScript to receive live sensor updates.</noscript>
+        <div class="telemetry-cards-row">
+          <% feeds.forEach(card => { %>
+            <article class="feed-card">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="sensor-dot"></span>
+                  <span><%= card.label %></span>
+                </div>
+
+                <% if (card.icon === 'sun') { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                  </svg>
+                <% } else if (card.icon === 'thermometer') { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+                  </svg>
+                <% } else if (card.icon === 'wind') { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path>
+                  </svg>
+                <% } else { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                  </svg>
+                <% } %>
+              </div>
+
+              <div class="card-metric">
+                <span class="val <%= card.color %>" data-value="<%= card.key %>">—</span>
+                <span class="unit"><%= card.unit %></span>
+              </div>
+              <p class="sensor-note" data-note="<%= card.key %>">Awaiting measurement</p>
+            </article>
+          <% }) %>
+        </div>
+        <div class="sensor-secondary">
+          <span>Humidity <strong data-value="humidity">—</strong> %</span>
+          <span>Pressure <strong data-value="pressure">—</strong> hPa</span>
+          <span>Altitude <strong data-value="altitude">—</strong> m (barometric)</span>
+          <span>Measured <strong data-value="timestamp">—</strong></span>
+        </div>
+      </section>
+
+      <!-- Section 2: Vehicle Dynamics & Track Position -->
+      <section class="telemetry-section">
+        <h3 class="section-title">VEHICLE DYNAMICS &amp; TRACK POSITION</h3>
+
+        <div class="dynamics-panel">
+          <div class="dynamics-info-side">
+            <div class="stats-pair">
+              <div class="stat-col">
+                <span class="stat-tag">CURRENT SPEED</span>
+                <div class="stat-data">
+                  <span class="stat-num" data-value="speed">—</span>
+                  <span class="unit">km/h</span>
+                </div>
+              </div>
+              <div class="stat-col">
+                <span class="stat-tag">LOG TODAY</span>
+                <div class="stat-data">
+                  <span class="stat-num" data-value="distance">—</span>
+                  <span class="unit">km</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="gps-coordinates">
+              <svg class="pin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <span data-value="gps">Waiting for a GPS fix</span>
+            </div>
+          </div>
+
+          <div class="dynamics-divider"></div>
+
+          <div class="dynamics-map-side">
+            <div class="track-canvas-container">
+              <svg class="track-svg" id="gps-track" viewBox="0 0 700 240" role="img" aria-label="Recent measured GPS positions">
+                <path d="M20 60H680 M20 120H680 M20 180H680 M175 20V220 M350 20V220 M525 20V220" stroke="#1e2633" fill="none"/>
+                <polyline id="gps-line" points="" fill="none" stroke="#00e599" stroke-width="3"/>
+                <circle id="gps-point" r="5" fill="#00e5ff" visibility="hidden"/>
+                <text id="gps-empty" x="350" y="125" text-anchor="middle" fill="#94a3b8" font-size="16">Waiting for GPS positions</text>
+              </svg>
+              <p class="sensor-note">Recent GPS trace · relative position, not a road map</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <%- include('../partials/optimization') %>
+    </main>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>
