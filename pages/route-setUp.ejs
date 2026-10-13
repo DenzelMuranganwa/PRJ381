@@ -11,6 +11,7 @@
 <body class="mobile-body">
 
   <div class="map-screen-wrapper">
+
     <!-- Top Floating Controls -->
     <div class="map-top-overlay">
       <a href="/dashboard" class="map-back-btn" aria-label="Return to Dashboard">
@@ -30,7 +31,7 @@
       <div id="map"></div>
     </div>
 
-    <!-- Bottom Sheet Form -->
+    <!-- Bottom Sheet Panel -->
     <div class="bottom-sheet-panel">
       <div class="sheet-drag-handle"></div>
 
@@ -55,20 +56,25 @@
         </div>
       </div>
 
-      <!-- Destination Search Box -->
-      <div class="destination-search-box">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#7075f8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input 
-          type="text" 
-          id="destinationInput" 
-          class="destination-input" 
-          placeholder="Enter address or coordinates..."
-          autocomplete="off"
-        />
-        <button type="button" id="clearSearchBtn" class="clear-search-btn">&times;</button>
+      <!-- Destination Search Box with Uber-Style Autocomplete -->
+      <div class="destination-search-container">
+        <div class="destination-search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#7075f8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input 
+            type="text" 
+            id="destinationInput" 
+            class="destination-input" 
+            placeholder="Search address, landmark, or street..."
+            autocomplete="off"
+          />
+          <button type="button" id="clearSearchBtn" class="clear-search-btn">&times;</button>
+        </div>
+
+        <!-- Suggestions Dropdown List -->
+        <div id="suggestionsList" class="autocomplete-dropdown"></div>
       </div>
 
       <!-- Status Message Box -->
@@ -107,7 +113,7 @@
         </div>
       </div>
 
-      <!-- Action Button -->
+      
       <button type="button" id="startBtn" class="mobile-btn">Calculate Best Solar Route</button>
       <a href="/dashboard" class="skip-action-link">Cancel & Return to Dashboard</a>
     </div>
@@ -141,6 +147,7 @@
       let targetMarker = null;
       let routePolylines = [];
       let currentSelectedRoute = null;
+      let debounceTimer = null;
 
       const input = document.getElementById('destinationInput');
       const clearBtn = document.getElementById('clearSearchBtn');
@@ -149,17 +156,93 @@
       const routeSummary = document.getElementById('routeSummary');
       const resDistTime = document.getElementById('resDistTime');
       const resNetEnergy = document.getElementById('resNetEnergy');
+      const suggestionsList = document.getElementById('suggestionsList');
 
+      // 1. Live Autocomplete Search (Photon / Komoot API)
       input.addEventListener('input', () => {
-        clearBtn.style.display = input.value ? 'block' : 'none';
+        const query = input.value.trim();
+        clearBtn.style.display = query ? 'block' : 'none';
+
         if (startBtn.textContent.startsWith('Start Trip')) {
           startBtn.textContent = 'Calculate Best Solar Route';
+        }
+
+        clearTimeout(debounceTimer);
+
+        // If query is short or already raw coordinates, close suggestions
+        if (query.length < 3 || /^[-+]?\d+(\.\d+)?[,\s]+[-+]?\d+(\.\d+)?$/.test(query)) {
+          suggestionsList.classList.remove('active');
+          suggestionsList.innerHTML = '';
+          return;
+        }
+
+        // 300ms debounce
+        debounceTimer = setTimeout(async () => {
+          try {
+            // Bias results towards current vehicle coordinates
+            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${vehicleCoords[0]}&lon=${vehicleCoords[1]}&limit=5`;
+            const res = await fetch(url);
+            if (!res.ok) return;
+
+            const data = await res.json();
+            const features = data.features || [];
+
+            if (features.length === 0) {
+              suggestionsList.classList.remove('active');
+              return;
+            }
+
+            suggestionsList.innerHTML = '';
+
+            features.forEach(feat => {
+              const p = feat.properties;
+              const [lon, lat] = feat.geometry.coordinates;
+
+              // Extract clean primary & secondary addresses
+              const primaryText = p.name || `${p.housenumber ? p.housenumber + ' ' : ''}${p.street || ''}`.trim() || 'Location';
+              const secondaryParts = [p.street !== primaryText ? p.street : '', p.city || p.town || p.district, p.state, p.country].filter(Boolean);
+              const secondaryText = secondaryParts.join(', ');
+
+              const item = document.createElement('div');
+              item.className = 'suggestion-item';
+              item.innerHTML = `
+                <div class="suggestion-details">
+                  <div class="suggestion-primary">${primaryText}</div>
+                  <div class="suggestion-secondary">${secondaryText}</div>
+                </div>
+              `;
+
+              // On clicking a suggestion, populate input and calculate route immediately
+              item.addEventListener('click', () => {
+                input.value = primaryText + (secondaryText ? `, ${secondaryText}` : '');
+                suggestionsList.classList.remove('active');
+                suggestionsList.innerHTML = '';
+                calculateRoute(`${lat}, ${lon}`, primaryText);
+              });
+
+              suggestionsList.appendChild(item);
+            });
+
+            suggestionsList.classList.add('active');
+
+          } catch (e) {
+            console.warn('Autocomplete fetch failed:', e);
+          }
+        }, 300);
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.destination-search-container')) {
+          suggestionsList.classList.remove('active');
         }
       });
 
       clearBtn.addEventListener('click', () => {
         input.value = '';
         clearBtn.style.display = 'none';
+        suggestionsList.classList.remove('active');
+        suggestionsList.innerHTML = '';
         routeSummary.style.display = 'none';
         startBtn.textContent = 'Calculate Best Solar Route';
         if (targetMarker) map.removeLayer(targetMarker);
@@ -171,13 +254,15 @@
         const coordsStr = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
         input.value = coordsStr;
         clearBtn.style.display = 'block';
-        calculateRoute(coordsStr);
+        suggestionsList.classList.remove('active');
+        calculateRoute(coordsStr, 'Selected Map Location');
       });
 
       document.querySelectorAll('.place-row').forEach(row => {
         row.addEventListener('click', () => {
-          input.value = row.dataset.coords;
+          input.value = row.dataset.name;
           clearBtn.style.display = 'block';
+          suggestionsList.classList.remove('active');
           calculateRoute(row.dataset.coords, row.dataset.name);
         });
       });

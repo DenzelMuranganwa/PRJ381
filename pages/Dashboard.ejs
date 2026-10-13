@@ -35,12 +35,12 @@
       top: 12px;
       left: 12px;
       right: 12px;
-      background: rgba(17, 23, 34, 0.95);
+      background: rgba(17, 23, 34, 0.96);
       border: 1.5px solid #283548;
       border-radius: 14px;
-      padding: 10px 14px;
+      padding: 12px 14px;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       z-index: 1000;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
@@ -48,17 +48,18 @@
     }
 
     .nav-maneuver-icon {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: 10px;
       background: #00e599;
       color: #0b111a;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       font-weight: 800;
       flex-shrink: 0;
+      margin-top: 2px;
     }
 
     .nav-direction-text {
@@ -67,19 +68,47 @@
     }
 
     .nav-maneuver-title {
-      font-size: 0.92rem;
+      font-size: 0.95rem;
       font-weight: 700;
       color: #ffffff;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.35;
+      word-break: break-word;
     }
 
     .nav-maneuver-sub {
-      font-size: 0.72rem;
+      font-size: 0.74rem;
+      color: #00e599;
+      font-weight: 600;
+      margin-top: 4px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .nav-maneuver-sub span {
       color: #8b98a9;
-      margin-top: 2px;
+      font-weight: 400;
+    }
+
+    /* Voice guidance button */
+    .nav-voice-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid #283548;
+      color: #ffffff;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+    }
+
+    .nav-voice-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
     }
 
     /* Google Maps-Style Trip Status Bottom Bar */
@@ -106,7 +135,7 @@
     }
 
     .nav-eta {
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       font-weight: 800;
       color: #00e599;
     }
@@ -122,7 +151,7 @@
       color: #ffffff;
       padding: 6px 12px;
       border-radius: 8px;
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       font-weight: 700;
       cursor: pointer;
       transition: opacity 0.15s ease;
@@ -256,7 +285,7 @@
 
   <%- include('../partials/footer') %>
 
-  <!-- Leaflet Map & Navigation Engine Script -->
+  <!-- Leaflet Map & Smart Route Engine -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -266,7 +295,7 @@
       const fallbackLat = -25.7479;
       const fallbackLng = 28.2293;
 
-      // Initialize Leaflet Map
+      // 1. Initialize Leaflet Map
       const map = L.map('dashboard-map', { zoomControl: false }).setView([fallbackLat, fallbackLng], 14);
 
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -276,7 +305,7 @@
 
       setTimeout(() => map.invalidateSize(), 200);
 
-      // Live Vehicle Marker
+      // 2. Vehicle Marker
       const carIcon = L.divIcon({
         className: 'custom-car-marker',
         html: `<div style="width: 14px; height: 14px; background: #00e599; border: 2.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 12px #00e599;"></div>`,
@@ -285,7 +314,21 @@
       });
       const carMarker = L.marker([fallbackLat, fallbackLng], { icon: carIcon }).addTo(map);
 
-      // Check for active navigation from localStorage
+      // 3. Voice Guidance Engine
+      let isVoiceMuted = localStorage.getItem('solarNavVoiceMuted') === 'true';
+
+      function speakInstruction(text) {
+        if (isVoiceMuted || !('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+
+      // 4. Check for active navigation trip
       const savedTrip = localStorage.getItem('activeSolarNavigation');
       if (savedTrip) {
         try {
@@ -310,30 +353,144 @@
 
             map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
 
-            function getManeuverArrow(modifier) {
-              if (!modifier) return '↑';
-              if (modifier.includes('right')) return '↱';
-              if (modifier.includes('left')) return '↰';
-              if (modifier.includes('u-turn')) return '↶';
-              return '↑';
+            // Helper: Icon
+            function getManeuverArrow(modifier, type) {
+              if (type === 'arrive') return '🏁';
+              if (type === 'roundabout' || type === 'rotary') return '🔄';
+              if (!modifier) return '⬆️';
+
+              const m = modifier.toLowerCase();
+              if (m.includes('sharp right')) return '↗️';
+              if (m.includes('slight right')) return '↗️';
+              if (m.includes('right')) return '➡️';
+              if (m.includes('sharp left')) return '↖️';
+              if (m.includes('slight left')) return '↖️';
+              if (m.includes('left')) return '⬅️';
+              if (m.includes('u-turn') || m.includes('uturn')) return '↩️';
+              return '⬆️';
             }
 
-            const firstStep = (navData.steps && navData.steps.length > 1) 
-              ? navData.steps[1] 
-              : (navData.steps && navData.steps[0]) || { name: navData.destinationName, distance: 500 };
+            // Helper: Format distance
+            function formatDistance(meters, speech = false) {
+              if (!meters || meters <= 0) return '';
+              if (meters >= 1000) {
+                const km = (meters / 1000).toFixed(1);
+                return speech ? `${km} kilometers` : `${km} km`;
+              }
+              const m = Math.round(meters);
+              return speech ? `${m} meters` : `${m} m`;
+            }
 
-            // Build Google Maps-style Top Turn HUD
+            // Helper: Clean street names & scrub coordinates
+            function cleanStreet(name) {
+              if (!name) return '';
+              const isCoord = /^[-+]?\d+(\.\d+)?[,\s]+[-+]?\d+(\.\d+)?$/.test(name.trim());
+              return isCoord ? '' : name.trim();
+            }
+
+            // 5. Rich Multi-Step Route Builder
+            function buildRichRouteGuidance(steps, targetName) {
+              if (!steps || steps.length === 0) {
+                const target = cleanStreet(targetName) || 'your destination';
+                return {
+                  display: `Head toward ${target}`,
+                  speech: `Head toward ${target}`,
+                  sub: 'Following solar-optimized trajectory',
+                  icon: '⬆️'
+                };
+              }
+
+              const initialStep = steps[0];
+              const initialRoad = cleanStreet(initialStep?.name);
+
+              // Look ahead for the first real decision turn
+              const nextTurnIdx = steps.findIndex((s, idx) => {
+                if (idx === 0) return false;
+                const mod = (s.modifier || '').toLowerCase();
+                const type = (s.type || '').toLowerCase();
+                return mod.includes('left') || mod.includes('right') || mod.includes('turn') || type.includes('roundabout') || type === 'fork';
+              });
+
+              const nextTurn = nextTurnIdx !== -1 ? steps[nextTurnIdx] : null;
+
+              // If an upcoming turn exists
+              if (nextTurn) {
+                const turnDistDisp = formatDistance(nextTurn.distance, false);
+                const turnDistSpeech = formatDistance(nextTurn.distance, true);
+                const turnRoad = cleanStreet(nextTurn.name);
+                const mod = (nextTurn.modifier || '').toLowerCase();
+                const type = (nextTurn.type || '').toLowerCase();
+
+                let turnAction = 'turn';
+                if (mod.includes('sharp left')) turnAction = 'take a sharp left';
+                else if (mod.includes('slight left')) turnAction = 'bear left';
+                else if (mod.includes('left')) turnAction = 'turn left';
+                else if (mod.includes('sharp right')) turnAction = 'take a sharp right';
+                else if (mod.includes('slight right')) turnAction = 'bear right';
+                else if (mod.includes('right')) turnAction = 'turn right';
+                else if (mod.includes('u-turn')) turnAction = 'make a U-turn';
+                else if (type.includes('roundabout')) turnAction = `take exit at roundabout`;
+
+                const turnTarget = turnRoad ? ` onto ${turnRoad}` : '';
+
+                let displayTitle = '';
+                let speechTitle = '';
+
+                if (initialRoad) {
+                  displayTitle = `Follow ${initialRoad}, then in ${turnDistDisp} ${turnAction}${turnTarget}`;
+                  speechTitle = `Follow ${initialRoad}. In ${turnDistSpeech}, ${turnAction}${turnTarget}`;
+                } else {
+                  displayTitle = `In ${turnDistDisp}, ${turnAction}${turnTarget}`;
+                  speechTitle = `In ${turnDistSpeech}, ${turnAction}${turnTarget}`;
+                }
+
+                return {
+                  display: displayTitle,
+                  speech: speechTitle,
+                  sub: `Next Turn: in ${turnDistDisp} • Lead Vehicle Priority`,
+                  icon: getManeuverArrow(nextTurn.modifier, nextTurn.type)
+                };
+              }
+
+              // No turn ahead (straight highway or long avenue)
+              const firstRoad = initialRoad || cleanStreet(steps[1]?.name);
+              const totalDist = formatDistance(initialStep?.distance || 1000);
+              const dest = cleanStreet(targetName);
+
+              if (firstRoad) {
+                return {
+                  display: `Continue straight on ${firstRoad}${dest ? ' toward ' + dest : ''}`,
+                  speech: `Continue straight on ${firstRoad}${dest ? ' toward ' + dest : ''}`,
+                  sub: `Maintain heading for ${totalDist} • Solar-Optimized Track`,
+                  icon: '⬆️'
+                };
+              }
+
+              return {
+                display: `Head toward ${dest || 'destination'} along optimized track`,
+                speech: `Head toward ${dest || 'destination'} along optimized track`,
+                sub: 'Optimal solar energy track locked',
+                icon: '⬆️'
+              };
+            }
+
+            const guidance = buildRichRouteGuidance(navData.steps, navData.destinationName);
+
+            // Build Top HUD with Voice Toggle
             const topHud = document.createElement('div');
             topHud.className = 'nav-hud-top';
             topHud.innerHTML = `
-              <div class="nav-maneuver-icon">${getManeuverArrow(firstStep.modifier)}</div>
+              <div class="nav-maneuver-icon">${guidance.icon}</div>
               <div class="nav-direction-text">
-                <div class="nav-maneuver-title">${firstStep.name ? ('In ' + firstStep.distance + 'm, on ' + firstStep.name) : ('Head toward ' + navData.destinationName)}</div>
-                <div class="nav-maneuver-sub">Solar-Optimized Route Active</div>
+                <div class="nav-maneuver-title">${guidance.display}</div>
+                <div class="nav-maneuver-sub">${guidance.sub}</div>
               </div>
+              <button id="navVoiceBtn" class="nav-voice-btn" title="Toggle Voice Guidance">
+                ${isVoiceMuted ? '🔇' : '🔊'}
+              </button>
             `;
 
-            // Build Google Maps-style Bottom Status Bar
+            // Build Bottom HUD
             const bottomHud = document.createElement('div');
             bottomHud.className = 'nav-hud-bottom';
             bottomHud.innerHTML = `
@@ -347,7 +504,23 @@
             mapContainer.parentElement.appendChild(topHud);
             mapContainer.parentElement.appendChild(bottomHud);
 
+            // Voice toggle listener
+            const voiceBtn = document.getElementById('navVoiceBtn');
+            voiceBtn.addEventListener('click', () => {
+              isVoiceMuted = !isVoiceMuted;
+              localStorage.setItem('solarNavVoiceMuted', isVoiceMuted);
+              voiceBtn.textContent = isVoiceMuted ? '🔇' : '🔊';
+              if (!isVoiceMuted) speakInstruction(guidance.speech);
+            });
+
+            // Announce instruction when navigating
+            setTimeout(() => {
+              speakInstruction(guidance.speech);
+            }, 600);
+
+            // Exit Navigation Button
             document.getElementById('exitNavBtn').addEventListener('click', () => {
+              if ('speechSynthesis' in window) window.speechSynthesis.cancel();
               localStorage.removeItem('activeSolarNavigation');
               topHud.remove();
               bottomHud.remove();
@@ -361,7 +534,7 @@
         }
       }
 
-      // Sync vehicle marker if your client-side SSE / WebSocket updates GPS coordinates
+      // Sync vehicle marker with live GPS updates
       const gpsObserver = new MutationObserver(() => {
         const gpsEl = document.querySelector('[data-value="gps"]');
         if (!gpsEl) return;
