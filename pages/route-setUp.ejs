@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Route Navigation - IWOS' %></title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- External Stylesheet -->
+  <link rel="stylesheet" href="/css.css" />
+</head>
+<body class="mobile-body">
+
+  <% 
+    const pi = locals.piPosition || {};
+    const initLat = parseFloat(pi.lat) || -25.7479;
+    const initLng = parseFloat(pi.lng) || 28.2293;
+    const windSpeed = pi.windKmh !== undefined ? pi.windKmh : 13;
+    const irradiance = pi.irradiance !== undefined ? pi.irradiance : 850;
+  %>
+
+  <div class="map-screen-wrapper">
+    <!-- Top Header -->
+    <header class="map-top-overlay">
+      <a href="/dashboard" class="map-back-btn" aria-label="Back to Dashboard">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </a>
+      <div class="telemetry-pill-mini">
+        <span class="pulse-dot"></span>
+        <span>IWOS-07</span>
+        <span>•</span>
+        <span id="topWind"><%= windSpeed %> km/h</span>
+        <span>•</span>
+        <span id="topIrr"><%= irradiance %> W/m²</span>
+      </div>
+    </header>
+
+    <!-- Real Interactive Map Viewport -->
+    <div class="map-viewport">
+      <div id="map"></div>
+    </div>
+
+    <!-- Bottom Sheet Panel -->
+    <section class="bottom-sheet-panel">
+      <div class="sheet-drag-handle"></div>
+
+      <!-- Current Location Field (Locked to Pi) -->
+      <div class="location-pill-box">
+        <div class="location-inner">
+          <svg class="loc-icon" viewBox="0 0 24 24" fill="none" stroke="#00e599" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <div>
+            <div class="location-sublabel">START POINT (PI GPS)</div>
+            <div class="location-name" id="displayCoords"><%= initLat.toFixed(4) %>, <%= initLng.toFixed(4) %></div>
+          </div>
+        </div>
+        <div class="sensor-tag">
+          <span class="pulse-dot"></span>
+          <span>SYNCED</span>
+        </div>
+      </div>
+
+      <!-- Free-Form Destination Search Box -->
+      <div class="destination-search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#8b98a9" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="text" 
+          id="destinationInput" 
+          class="destination-input" 
+          placeholder="Type any address, city, or click map..." 
+          autocomplete="off"
+        />
+        <button type="button" id="clearSearchBtn" class="clear-search-btn">&times;</button>
+      </div>
+
+      <div id="statusMessage"></div>
+
+      <!-- Route Calculation Metrics Box -->
+      <div id="routeSummary" class="route-summary-box">
+        <div class="metric-row">
+          <span>Distance / ETA:</span>
+          <b id="resDistTime">-</b>
+        </div>
+        <div class="metric-row">
+          <span>Net Battery Drain:</span>
+          <b id="resNetEnergy">-</b>
+        </div>
+      </div>
+
+      <!-- Saved Places List -->
+      <div class="places-list-block">
+        <span class="places-section-label">SAVED RACE WAYPOINTS</span>
+        <div class="places-list" id="placesList">
+          <div class="place-row" data-name="Kempton Park Hub" data-coords="-26.1325, 28.2312" tabindex="0">
+            <div class="place-left">
+              <svg class="place-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <strong class="place-name">Kempton Park Hub</strong>
+            </div>
+            <span class="place-distance">Sector 1</span>
+          </div>
+
+          <div class="place-row" data-name="Pretoria Proving Loop" data-coords="-25.7479, 28.2293" tabindex="0">
+            <div class="place-left">
+              <svg class="place-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <strong class="place-name">Pretoria Proving Loop</strong>
+            </div>
+            <span class="place-distance">Sector 2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button type="button" id="startTripBtn" class="mobile-btn">
+        Calculate Best Solar Route
+      </button>
+      <a href="/dashboard" class="skip-action-link">Skip Route Setup</a>
+    </section>
+  </div>
+
+  <!-- Leaflet Map Engine -->
+  <!-- Leaflet Map Engine -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Initial coordinates injected from Pi
+      let vehicleCoords = [
+        parseFloat('<%= initLat %>') || -25.7479,
+        parseFloat('<%= initLng %>') || 28.2293
+      ];
+      let currentWind = parseFloat('<%= windSpeed %>') || 13;
+
+      // 2. Initialize Leaflet Map using free standard OpenStreetMap tiles
+      const map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView(vehicleCoords, 13);
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Invalidate container size to ensure full rendering
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
+
+      // Vehicle Pulse Marker
+      const carIcon = L.divIcon({
+        className: 'custom-vehicle-marker',
+        html: `<div style="width: 14px; height: 14px; background: #00e599; border: 2.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 12px #00e599;"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+
+      const carMarker = L.marker(vehicleCoords, { icon: carIcon }).addTo(map);
+
+      let routePolylines = [];
+      let targetMarker = null;
+
+      const input = document.getElementById('destinationInput');
+      const clearBtn = document.getElementById('clearSearchBtn');
+      const startBtn = document.getElementById('startTripBtn');
+      const placeRows = document.querySelectorAll('.place-row');
+      const statusMsg = document.getElementById('statusMessage');
+      const routeSummary = document.getElementById('routeSummary');
+      const resDistTime = document.getElementById('resDistTime');
+      const resNetEnergy = document.getElementById('resNetEnergy');
+      const displayCoords = document.getElementById('displayCoords');
+
+      // 3. Click anywhere on the map to choose any unrestricted destination
+      map.on('click', (e) => {
+        const clickedLat = e.latlng.lat.toFixed(5);
+        const clickedLng = e.latlng.lng.toFixed(5);
+        const coordsStr = `${clickedLat}, ${clickedLng}`;
+        
+        input.value = coordsStr;
+        clearBtn.style.display = 'block';
+        placeRows.forEach(r => r.classList.remove('selected'));
+        calculateRoute(coordsStr);
+      });
+
+      // 4. Periodically poll Pi's live GPS every 10 seconds
+      async function syncPiLocation() {
+        try {
+          const res = await fetch('/api/vehicle/gps');
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data.latitude && data.longitude) {
+            vehicleCoords = [parseFloat(data.latitude), parseFloat(data.longitude)];
+            carMarker.setLatLng(vehicleCoords);
+            if (displayCoords) {
+              displayCoords.textContent = `${vehicleCoords[0].toFixed(4)}, ${vehicleCoords[1].toFixed(4)}`;
+            }
+          }
+          if (data.wind_speed_ms !== undefined) {
+            currentWind = Math.round(Number(data.wind_speed_ms) * 3.6);
+            const topWind = document.getElementById('topWind');
+            if (topWind) topWind.textContent = `${currentWind} km/h`;
+          }
+        } catch (e) {
+          console.warn('Pi sync check skipped:', e);
+        }
+      }
+      setInterval(syncPiLocation, 10000);
+
+      // 5. Optimal Solar Route Calculation
+      async function calculateRoute(destinationText) {
+        if (!destinationText || !destinationText.trim()) {
+          statusMsg.textContent = 'Please enter a destination or click the map.';
+          return;
+        }
+
+        statusMsg.textContent = 'Calculating optimal solar track...';
+        startBtn.disabled = true;
+        startBtn.textContent = 'Evaluating Solar Balance...';
+
+        try {
+          const res = await fetch('/api/calculate-solar-route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              startLat: vehicleCoords[0],
+              startLng: vehicleCoords[1],
+              destination: destinationText.trim(),
+              headwind: currentWind
+            })
+          });
+
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error);
+
+          statusMsg.textContent = '';
+
+          // Clear previous map layers
+          routePolylines.forEach(p => map.removeLayer(p));
+          routePolylines = [];
+          if (targetMarker) map.removeLayer(targetMarker);
+
+          // Place Destination Marker
+          targetMarker = L.circleMarker(data.destination, {
+            radius: 8,
+            color: '#7075f8',
+            fillColor: '#ffffff',
+            fillOpacity: 1,
+            weight: 3
+          }).addTo(map);
+
+          // Draw the routes
+          data.routes.forEach((route, idx) => {
+            const isBest = idx === 0;
+            const poly = L.polyline(route.coordinates, {
+              color: isBest ? '#7075f8' : '#334155',
+              weight: isBest ? 5 : 3,
+              opacity: isBest ? 0.95 : 0.5,
+              dashArray: isBest ? null : '5, 5'
+            }).addTo(map);
+
+            routePolylines.push(poly);
+          });
+
+          const bestRoute = data.routes[0];
+          map.fitBounds(routePolylines[0].getBounds(), { padding: [40, 40] });
+
+          // Display summary metrics
+          routeSummary.style.display = 'flex';
+          resDistTime.textContent = `${bestRoute.distanceKm} km (${bestRoute.durationMin} mins)`;
+          resNetEnergy.textContent = `${bestRoute.netBatteryDrain > 0 ? '-' + bestRoute.netBatteryDrain : '+' + Math.abs(bestRoute.netBatteryDrain)} kWh`;
+
+          startBtn.disabled = false;
+          startBtn.textContent = `Start Trip (${bestRoute.distanceKm} km)`;
+
+        } catch (err) {
+          statusMsg.textContent = err.message || 'Route calculation failed.';
+          startBtn.disabled = false;
+          startBtn.textContent = 'Calculate Best Solar Route';
+        }
+      }
+
+      // 6. Handle input keyboard submissions (Enter key)
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          calculateRoute(input.value);
+        }
+      });
+
+      input.addEventListener('input', () => {
+        clearBtn.style.display = input.value.trim().length ? 'block' : 'none';
+      });
+
+      // 7. Calculate or Start Trip action
+      startBtn.addEventListener('click', () => {
+        if (startBtn.textContent.startsWith('Start Trip')) {
+          window.location.href = '/dashboard';
+        } else {
+          calculateRoute(input.value);
+        }
+      });
+
+      // 8. Handle preset waypoint clicks
+      placeRows.forEach(row => {
+        row.addEventListener('click', () => {
+          placeRows.forEach(r => r.classList.remove('selected'));
+          row.classList.add('selected');
+
+          const coords = row.dataset.coords;
+          input.value = row.dataset.name;
+          clearBtn.style.display = 'block';
+
+          calculateRoute(coords);
+        });
+      });
+
+      // 9. Clear search button
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.style.display = 'none';
+        placeRows.forEach(r => r.classList.remove('selected'));
+        
+        routePolylines.forEach(p => map.removeLayer(p));
+        routePolylines = [];
+        if (targetMarker) map.removeLayer(targetMarker);
+        routeSummary.style.display = 'none';
+        statusMsg.textContent = '';
+        
+        map.setView(vehicleCoords, 13);
+        startBtn.textContent = 'Calculate Best Solar Route';
+      });
+    });
+  </script>
+</body>
+</html>
