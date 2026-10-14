@@ -3,7 +3,7 @@
  * Total Waypoints: 36
  * Total Distance: ~52.1 km
  * Includes 3 Designated Pit Stops
- */
+ 
 
 const highResKemptonTrack = [
   // --- LEG 1: Pretoria Urban Exit (0.0 km -> 4.8 km) ---
@@ -243,4 +243,4 @@ const highResKemptonTrack = [
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = highResKemptonTrack;
-}
+}*/

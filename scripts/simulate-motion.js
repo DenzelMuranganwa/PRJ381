@@ -1,9 +1,9 @@
-/*'use strict';
+'use strict';
 
 /**
  * Solar Car Driveway Simulator
  * Pushes moving GPS coordinates + realistic solar telemetry readings
- 
+ */
 
 const mockDriveway = [
   { lat: -25.7479, lng: 28.2293, speed: 0, wind: 12, irr: 840, temp: 26.2 },
@@ -63,4 +63,4 @@ async function sendTelemetryPulse() {
 console.log(' Solar Vehicle Movement Simulation running...');
 console.log('Emitting vehicle positions every 3 seconds...');
 setInterval(sendTelemetryPulse, 3000);
-sendTelemetryPulse();*/
+sendTelemetryPulse();
