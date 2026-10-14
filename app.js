@@ -1,6 +1,7 @@
 'use strict';
 const express = require('express');
 const session = require('express-session');
+const { MongoStore } = require('connect-mongo');
 const multer = require('multer');
 const path = require('node:path');
 const { randomBytes } = require('node:crypto');
@@ -35,7 +36,11 @@ const avatarUpload = multer({
   },
 });
 
-function createApp(config, store, userStore = new UserStore()) {
+function createApp(config, store, userStore = new UserStore(), {
+  mongoClient = null,
+  databaseName = 'iwos_database',
+  syncSessionsCollection = null,
+} = {}) {
   const app = express();
   app.disable('x-powered-by');
   if (config.isProduction) app.set('trust proxy', 1);
@@ -43,12 +48,20 @@ function createApp(config, store, userStore = new UserStore()) {
   app.set('views', config.root);
 
   // 1. CRITICAL: Enable JSON parsing so /api/calculate-solar-route receives req.body
-  app.use(express.json());
+  app.use(express.json({ limit: '8kb' }));
   app.use(express.urlencoded({ extended: false, limit: '16kb' }));
 
   app.use(session({
     name: 'iwos.sid',
     secret: config.sessionSecret || randomBytes(32).toString('hex'),
+    ...(mongoClient ? {
+      store: MongoStore.create({
+        client: mongoClient,
+        dbName: databaseName,
+        collectionName: 'express_sessions',
+        ttl: 8 * 60 * 60,
+      }),
+    } : {}),
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -78,11 +91,18 @@ function createApp(config, store, userStore = new UserStore()) {
 
   // 3. Existing application routers
   app.use('/api', createApiRouter(store, config));
-  app.use('/', createTelemetryRouter(userStore, avatarUpload.single('avatar'), path.join(config.root, 'public')));
+  app.use('/', createTelemetryRouter(
+    userStore,
+    avatarUpload.single('avatar'),
+    path.join(config.root, 'public'),
+    syncSessionsCollection,
+    store,
+  ));
 
   app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);
     const status = error.status || (error instanceof multer.MulterError ? 400 : 500);
+    if (status >= 500) console.error('Request failed:', error);
     const message = error instanceof multer.MulterError
       ? 'Image upload rejected. Only one image up to 5 MB is allowed.'
       : error.type === 'entity.parse.failed' ? 'Malformed JSON' : error.message;

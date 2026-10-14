@@ -9,24 +9,27 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MASANAMATHONSI/PRJ381-.git"
+    "url": "git+https://github.com/DenzelMuranganwa/PRJ381.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/MASANAMATHONSI/PRJ381-/issues"
+    "url": "https://github.com/DenzelMuranganwa/PRJ381/issues"
   },
-  "homepage": "https://github.com/MASANAMATHONSI/PRJ381-#readme",
+  "homepage": "https://github.com/DenzelMuranganwa/PRJ381#readme",
   "dependencies": {
     "@capacitor/android": "^8.5.3",
     "@capacitor/cli": "^8.5.3",
     "@capacitor/core": "^8.5.3",
     "bcryptjs": "^3.0.3",
+    "connect-mongo": "^6.0.0",
     "ejs": "^6.0.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
     "express-session": "^1.19.0",
+    "mongodb": "^7.7.0",
     "mqtt": "^5.14.1",
     "multer": "^2.4.0"
   },

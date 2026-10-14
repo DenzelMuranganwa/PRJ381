@@ -4,6 +4,24 @@
   const format = (value, digits = 1) => Number.isFinite(value) ? value.toFixed(digits) : '—';
   const names = { temperature:'air temperature', humidity:'humidity', wind:'wind speed', irradiance:'irradiance', rain:'rainfall', battery:'battery level', speed:'vehicle speed' };
 
+  if (document.body.dataset.authenticated !== 'true') {
+    const sendGuestHeartbeat = async () => {
+      try {
+        const response = await fetch('/api/sessions/guest-heartbeat', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}',
+        });
+        if (!response.ok) throw new Error(`Guest heartbeat failed with status ${response.status}`);
+      } catch (error) {
+        console.warn(error);
+      }
+    };
+    sendGuestHeartbeat();
+    window.setInterval(sendGuestHeartbeat, 30000);
+  }
+
   function renderTrack(history) {
     const line = document.getElementById('gps-line');
     if (!line) return;
@@ -58,8 +76,15 @@
       wind:w.wind_speed_ms == null ? null : w.wind_speed_ms*3.6, humidity:w.humidity_pct,
       pressure:w.pressure_hpa, altitude:w.altitude_m, speed:v.speed_kmh, distance:v.distance_today_km,
     };
-    for (const [key,value] of Object.entries(values)) text(`[data-value="${key}"]`,format(value));
-    for (const key of ['temperature','irradiance','wind','rainfall']) text(`[data-note="${key}"]`, values[key] == null ? 'No sensor measurement' : data.state === 'live' ? 'Measured by sensor' : 'Last reading · stale');
+    for (const [key,value] of Object.entries(values)) {
+      const unavailable = ['irradiance','rainfall'].includes(key) ? 'Not measured' : '—';
+      text(`[data-value="${key}"]`,Number.isFinite(value) ? format(value) : unavailable);
+    }
+    for (const key of ['temperature','wind','humidity','pressure']) {
+      const value = values[key];
+      text(`[data-note="${key}"]`,value == null ? (data.weather ? 'No sensor measurement' : 'Waiting for measurement') :
+        data.state === 'live' ? 'Measured by sensor' : 'Last reading · stale');
+    }
     text('[data-value="timestamp"]',data.weather ? new Date(data.weather.timestamp).toLocaleString() : '—');
     text('[data-value="gps"]',w.latitude == null || w.longitude == null ? 'No GPS fix available' : `${Math.abs(w.latitude).toFixed(5)}° ${w.latitude<0?'S':'N'}, ${Math.abs(w.longitude).toFixed(5)}° ${w.longitude<0?'W':'E'}`);
     for (const key of ['recommendation','reason','batteryMode','energyStatus']) text(`[data-ai="${key}"]`, ai[key] ?? 'Unavailable');
@@ -72,8 +97,10 @@
     const observations=document.getElementById('weather-observations');
     if (observations) { observations.replaceChildren(); ai.observations.forEach(value=>{const li=document.createElement('li');li.textContent=value;observations.append(li);}); }
     for (const key of ['temperature','wind','irradiance','efficiency']) {
-      const f=ai.forecasts[key]; text(`[data-forecast="${key}"]`,format(f?.value));
-      text(`[data-trend="${key}"]`,data.state!=='live' ? 'Waiting for fresh readings' : f?.value==null ? `Waiting · ${f?.samples || 0} valid samples` : `${f.trend} · ${f.samples} samples`);
+      const f=ai.forecasts[key], irradianceUnavailable=key==='irradiance'&&w.irradiance_wm2==null;
+      text(`[data-forecast="${key}"]`,irradianceUnavailable?'Not measured':format(f?.value));
+      text(`[data-trend="${key}"]`,irradianceUnavailable?'Not measured by station':
+        data.state!=='live'?'Waiting for fresh readings':f?.value==null?`Waiting · ${f?.samples||0} valid samples`:`${f.trend} · ${f.samples} samples`);
     }
     renderTrack(data.history); renderLogs(data);
   }

@@ -56,7 +56,8 @@ test('account registration, login, protected pages, profile preferences, and log
   assert.equal(registerPage.status, 200);
   const registerHtml = await registerPage.text();
   assert.match(registerHtml, /href="\/dashboard"[^>]*>.*Back to Dashboard/);
-  assert.match(registerHtml, /name="avatar" type="file" accept="image\/\*"/);
+  assert.doesNotMatch(registerHtml, /name="avatar"/);
+  assert.match(registerHtml, /add a profile picture later in Personalization/i);
   const registrationToken = csrfToken(registerHtml);
   const blockedPost = await request('/register', {
     method: 'POST',
@@ -65,14 +66,18 @@ test('account registration, login, protected pages, profile preferences, and log
   });
   assert.equal(blockedPost.status, 403);
 
-  const registration = new FormData();
-  registration.set('_csrf', registrationToken);
-  registration.set('fullName', 'Test User');
-  registration.set('email', 'TEST@example.com');
-  registration.set('password', 'StrongPass123');
-  registration.set('vehicleNickname', 'IWOS-07');
-  registration.set('avatar', new Blob([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], { type: 'image/png' }), 'avatar.png');
-  const registerResponse = await request('/register', { method: 'POST', body: registration });
+  const registration = new URLSearchParams({
+    _csrf: registrationToken,
+    fullName: 'Test User',
+    email: 'TEST@example.com',
+    password: 'StrongPass123',
+    vehicleNickname: 'IWOS-07',
+  });
+  const registerResponse = await request('/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: registration,
+  });
   assert.equal(registerResponse.status, 302);
   assert.equal(registerResponse.headers.get('location'), '/dashboard');
   const profile = await userStore.authenticate('test@example.com', 'StrongPass123');
@@ -80,21 +85,35 @@ test('account registration, login, protected pages, profile preferences, and log
   assert.equal(profile.email, 'test@example.com');
   assert.equal(Object.hasOwn(profile, 'passwordHash'), false);
   assert.equal(await userStore.authenticate('test@example.com', 'wrong-password'), null);
-  assert.match(profile.profilePictureUrl, /^\/uploads\/[a-f0-9-]+\.png$/);
-  uploadedPaths.push(profile.profilePictureUrl);
-  const uploadedAvatar = await request(profile.profilePictureUrl);
-  assert.equal(uploadedAvatar.status, 200);
-  assert.deepEqual(Buffer.from(await uploadedAvatar.arrayBuffer()), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  assert.equal(profile.profilePictureUrl, '');
 
   const dashboard = await request('/dashboard');
   assert.equal(dashboard.status, 200);
   const dashboardHtml = await dashboard.text();
   assert.match(dashboardHtml, /Test User/);
-  assert.match(dashboardHtml, /profile-avatar-image/);
+  assert.doesNotMatch(dashboardHtml, /profile-avatar-image/);
+  assert.doesNotMatch(dashboardHtml, /Profile picture URL/);
+  assert.match(dashboardHtml, /method="post" action="\/logout"/);
+  assert.doesNotMatch(dashboardHtml, /href="\/logout"/);
   assert.match(dashboardHtml, /optimization-section/);
   const authenticatedToken = csrfToken(dashboardHtml);
   assert.equal((await request('/sync-sessions')).status, 200);
   assert.equal((await request('/route-setup')).status, 200);
+  const routePage = await request('/route-setup');
+  assert.match(await routePage.text(), /Waiting for a fresh GPS fix/);
+  const zeroOriginResponse = await request('/api/calculate-solar-route', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ startLat: 0, startLng: 0, destination: '', headwind: 0 }),
+  });
+  assert.equal(zeroOriginResponse.status, 400);
+  assert.match((await zeroOriginResponse.json()).error, /Destination/);
+  const badWindResponse = await request('/api/calculate-solar-route', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ startLat: 0, startLng: 0, destination: 'Pretoria', headwind: 'strong' }),
+  });
+  assert.equal(badWindResponse.status, 400);
 
   const themeResponse = await request('/settings/theme', {
     method: 'POST',
@@ -142,17 +161,6 @@ test('account registration, login, protected pages, profile preferences, and log
   assert.match(updatedAvatar.profilePictureUrl, /^\/uploads\/[a-f0-9-]+\.gif$/);
   uploadedPaths.push(updatedAvatar.profilePictureUrl);
 
-  const invalidUploadToken = csrfToken(await (await request('/settings')).text());
-  const invalidUpload = new FormData();
-  invalidUpload.set('_csrf', invalidUploadToken);
-  invalidUpload.set('fullName', 'Upload User');
-  invalidUpload.set('email', 'upload@example.com');
-  invalidUpload.set('password', 'StrongPass123');
-  invalidUpload.set('vehicleNickname', 'Upload Test');
-  invalidUpload.set('avatar', new Blob(['not an image'], { type: 'text/plain' }), 'avatar.txt');
-  const invalidUploadResponse = await request('/register', { method: 'POST', body: invalidUpload });
-  assert.equal(invalidUploadResponse.status, 400);
-
   const settingsToken = csrfToken(await (await request('/settings')).text());
   const profileResponse = await request('/settings', {
     method: 'POST',
@@ -188,7 +196,7 @@ test('account registration, login, protected pages, profile preferences, and log
     body: new URLSearchParams({ _csrf: logoutToken }),
   });
   assert.equal(logoutResponse.status, 302);
-  assert.equal(logoutResponse.headers.get('location'), '/signup');
+  assert.equal(logoutResponse.headers.get('location'), '/dashboard');
   const afterLogout = await request('/dashboard');
   assert.equal(afterLogout.status, 200);
   assert.match(await afterLogout.text(), />Guest</);
@@ -205,7 +213,13 @@ test('account registration, login, protected pages, profile preferences, and log
   });
   assert.equal(signinResponse.status, 302);
   assert.equal(signinResponse.headers.get('location'), '/dashboard');
-  const getLogoutResponse = await request('/logout');
-  assert.equal(getLogoutResponse.status, 302);
-  assert.equal(getLogoutResponse.headers.get('location'), '/signup');
+  assert.equal((await request('/logout')).status, 404);
+  const postLogoutToken = csrfToken(await (await request('/dashboard')).text());
+  const postLogoutResponse = await request('/logout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ _csrf: postLogoutToken }),
+  });
+  assert.equal(postLogoutResponse.status, 302);
+  assert.equal(postLogoutResponse.headers.get('location'), '/dashboard');
 });

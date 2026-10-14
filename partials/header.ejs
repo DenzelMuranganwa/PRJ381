@@ -45,12 +45,6 @@
             <span><%= userObj.email %></span>
           </div>
           <a href="/settings" class="profile-menu-link">Personalization &amp; Settings</a>
-          <form class="profile-picture-form" method="post" action="/settings/avatar">
-            <input type="hidden" name="_csrf" value="<%= token %>">
-            <label for="profilePictureUrl">Profile picture URL</label>
-            <input id="profilePictureUrl" name="profilePictureUrl" type="url" inputmode="url" placeholder="https://…" maxlength="2048" value="<%= userObj.profilePictureUrl || '' %>">
-            <button type="submit" class="profile-picture-save">Save picture</button>
-          </form>
         <% } else { %>
           <div class="profile-identity">
             <strong>Guest</strong>
@@ -70,7 +64,10 @@
         </div>
         
         <% if (userObj) { %>
-          <a href="/logout" class="profile-menu-link profile-logout">Sign Out</a>
+          <form method="post" action="/logout">
+            <input type="hidden" name="_csrf" value="<%= token %>">
+            <button type="submit" class="profile-menu-link profile-logout">Sign Out</button>
+          </form>
         <% } %>
       </div>
     </details>
@@ -134,10 +131,13 @@
         <span class="nav-icon">⚙</span>
         <span>Personalization</span>
       </a>
-      <a href="/logout" class="nav-link nav-signout">
-        <span class="nav-icon">↪</span>
-        <span>Sign Out</span>
-      </a>
+      <form method="post" action="/logout">
+        <input type="hidden" name="_csrf" value="<%= token %>">
+        <button type="submit" class="nav-link nav-signout">
+          <span class="nav-icon">↪</span>
+          <span>Sign Out</span>
+        </button>
+      </form>
     <% } else { %>
       <a href="/signup" class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'signup') ? 'active' : '' %>">
         <span class="nav-icon">↪</span>

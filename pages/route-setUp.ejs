@@ -22,7 +22,7 @@
       
       <div class="telemetry-pill-mini">
         <span class="pulse-dot"></span>
-        <span id="headerWind"><%= (typeof piPosition !== 'undefined' && piPosition.windKmh) ? piPosition.windKmh : '13' %> km/h Wind</span>
+        <span id="headerWind"><%= Number.isFinite(piPosition.windKmh) ? `${piPosition.windKmh.toFixed(1)} km/h Wind` : 'Wind unavailable' %></span>
       </div>
     </div>
 
@@ -45,14 +45,13 @@
           <div>
             <div class="location-sublabel">START POINT (PI GPS)</div>
             <div class="location-name" id="startCoords">
-              <%= (typeof piPosition !== 'undefined' && piPosition.lat) ? piPosition.lat : '-25.7479' %>, 
-              <%= (typeof piPosition !== 'undefined' && piPosition.lng) ? piPosition.lng : '28.2293' %>
+              <% if (hasGps) { %><%= piPosition.lat.toFixed(5) %>, <%= piPosition.lng.toFixed(5) %><% } else { %>Waiting for a fresh GPS fix<% } %>
             </div>
           </div>
         </div>
         <div class="sensor-tag">
           <span class="pulse-dot"></span>
-          <span>SYNCED</span>
+          <span><%= hasGps ? 'GPS FIX' : 'NO GPS FIX' %></span>
         </div>
       </div>
 
@@ -122,11 +121,11 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const vehicleCoords = [
-        parseFloat('<%= (typeof piPosition !== "undefined" && piPosition.lat) ? piPosition.lat : "-25.7479" %>'),
-        parseFloat('<%= (typeof piPosition !== "undefined" && piPosition.lng) ? piPosition.lng : "28.2293" %>')
-      ];
-      const currentWind = parseFloat('<%= (typeof piPosition !== "undefined" && piPosition.windKmh) ? piPosition.windKmh : "13" %>');
+      const hasVehicleGps = <%- JSON.stringify(hasGps) %>;
+      const vehicleCoords = hasVehicleGps
+        ? [<%- JSON.stringify(piPosition.lat) %>, <%- JSON.stringify(piPosition.lng) %>]
+        : [-25.7479, 28.2293];
+      const currentWind = <%- JSON.stringify(piPosition.windKmh) %> ?? 0;
 
       const map = L.map('map', { zoomControl: false }).setView(vehicleCoords, 14);
 
@@ -136,18 +135,21 @@
 
       setTimeout(() => map.invalidateSize(), 200);
 
-      const vehicleMarker = L.circleMarker(vehicleCoords, {
-        radius: 8,
-        color: '#00e599',
-        fillColor: '#ffffff',
-        fillOpacity: 1,
-        weight: 3
-      }).addTo(map).bindPopup('Vehicle Sensor Location');
+      if (hasVehicleGps) {
+        L.circleMarker(vehicleCoords, {
+          radius: 8,
+          color: '#00e599',
+          fillColor: '#ffffff',
+          fillOpacity: 1,
+          weight: 3
+        }).addTo(map).bindPopup('Latest weather sensor GPS fix');
+      }
 
       let targetMarker = null;
       let routePolylines = [];
       let currentSelectedRoute = null;
       let debounceTimer = null;
+      let suggestionRequestId = 0;
 
       const input = document.getElementById('destinationInput');
       const clearBtn = document.getElementById('clearSearchBtn');
@@ -168,56 +170,64 @@
         }
 
         clearTimeout(debounceTimer);
+        const requestId = ++suggestionRequestId;
 
         // If query is short or already raw coordinates, close suggestions
         if (query.length < 3 || /^[-+]?\d+(\.\d+)?[,\s]+[-+]?\d+(\.\d+)?$/.test(query)) {
           suggestionsList.classList.remove('active');
-          suggestionsList.innerHTML = '';
+          suggestionsList.replaceChildren();
+          return;
+        }
+        if (!hasVehicleGps) {
+          statusMsg.textContent = 'Location search requires a fresh vehicle GPS fix.';
+          suggestionsList.classList.remove('active');
+          suggestionsList.replaceChildren();
           return;
         }
 
-        // 300ms debounce
         debounceTimer = setTimeout(async () => {
           try {
-            // Bias results towards current vehicle coordinates
-            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${vehicleCoords[0]}&lon=${vehicleCoords[1]}&limit=5`;
-            const res = await fetch(url);
-            if (!res.ok) return;
-
+            const params = new URLSearchParams({
+              q: query,
+              lat: String(vehicleCoords[0]),
+              lon: String(vehicleCoords[1]),
+            });
+            const res = await fetch(`/api/route-suggestions?${params}`, {
+              cache: 'no-store',
+              signal: AbortSignal.timeout(9000),
+            });
             const data = await res.json();
-            const features = data.features || [];
+            if (!res.ok) throw new Error(data.error || 'Location search failed.');
+            if (requestId !== suggestionRequestId) return;
+            const features = data.suggestions || [];
 
             if (features.length === 0) {
               suggestionsList.classList.remove('active');
+              suggestionsList.replaceChildren();
               return;
             }
 
-            suggestionsList.innerHTML = '';
+            suggestionsList.replaceChildren();
 
-            features.forEach(feat => {
-              const p = feat.properties;
-              const [lon, lat] = feat.geometry.coordinates;
-
-              // Extract clean primary & secondary addresses
-              const primaryText = p.name || `${p.housenumber ? p.housenumber + ' ' : ''}${p.street || ''}`.trim() || 'Location';
-              const secondaryParts = [p.street !== primaryText ? p.street : '', p.city || p.town || p.district, p.state, p.country].filter(Boolean);
-              const secondaryText = secondaryParts.join(', ');
-
+            features.forEach(feature => {
               const item = document.createElement('div');
               item.className = 'suggestion-item';
-              item.innerHTML = `
-                <div class="suggestion-details">
-                  <div class="suggestion-primary">${primaryText}</div>
-                  <div class="suggestion-secondary">${secondaryText}</div>
-                </div>
-              `;
+              const details = document.createElement('div');
+              details.className = 'suggestion-details';
+              const primary = document.createElement('div');
+              primary.className = 'suggestion-primary';
+              primary.textContent = feature.name;
+              const secondary = document.createElement('div');
+              secondary.className = 'suggestion-secondary';
+              secondary.textContent = feature.secondary;
+              details.append(primary, secondary);
+              item.append(details);
 
-              // On clicking a suggestion, populate input and calculate route immediately
               item.addEventListener('click', () => {
-                input.value = primaryText + (secondaryText ? `, ${secondaryText}` : '');
+                input.value = feature.name + (feature.secondary ? `, ${feature.secondary}` : '');
                 suggestionsList.classList.remove('active');
-                suggestionsList.innerHTML = '';
-                calculateRoute(`${lat}, ${lon}`, primaryText);
+                suggestionsList.replaceChildren();
+                calculateRoute(`${feature.latitude}, ${feature.longitude}`, feature.name);
               });
 
               suggestionsList.appendChild(item);
@@ -226,9 +236,11 @@
             suggestionsList.classList.add('active');
 
           } catch (e) {
+            if (requestId !== suggestionRequestId) return;
             console.warn('Autocomplete fetch failed:', e);
+            statusMsg.textContent = e.message || 'Location search failed.';
           }
-        }, 300);
+        }, 400);
       });
 
       // Close dropdown when clicking outside
@@ -242,7 +254,7 @@
         input.value = '';
         clearBtn.style.display = 'none';
         suggestionsList.classList.remove('active');
-        suggestionsList.innerHTML = '';
+        suggestionsList.replaceChildren();
         routeSummary.style.display = 'none';
         startBtn.textContent = 'Calculate Best Solar Route';
         if (targetMarker) map.removeLayer(targetMarker);
@@ -268,6 +280,10 @@
       });
 
       async function calculateRoute(destinationText, friendlyName) {
+        if (!hasVehicleGps) {
+          statusMsg.textContent = 'Route planning requires a fresh vehicle GPS fix.';
+          return;
+        }
         if (!destinationText || !destinationText.trim()) {
           statusMsg.textContent = 'Please enter a destination or click the map.';
           return;

@@ -225,8 +225,10 @@
         <h3 class="section-title">TELEMETRY FEED</h3>
 
         <% const feeds = [
+          {key:'irradiance', label:'Irradiance', unit:'W/m²', color:'val-amber', icon:'sun'},
           {key:'temperature', label:'Atmos', unit:'°C', color:'val-blue', icon:'thermometer'},
-          {key:'wind', label:'Wind', unit:'km/h', color:'val-cyan', icon:'wind'}
+          {key:'wind', label:'Wind', unit:'km/h', color:'val-cyan', icon:'wind'},
+          {key:'rainfall', label:'Rainfall', unit:'mm/h', color:'val-red', icon:'droplet'}
         ]; %>
         <div class="sensor-status-row" role="status" aria-live="polite">
           <span class="sensor-pill" data-feed-state>Waiting</span>
@@ -250,6 +252,10 @@
                   <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path>
                   </svg>
+                <% } else { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                  </svg>
                 <% } %>
               </div>
 
@@ -262,8 +268,8 @@
           <% }) %>
         </div>
         <div class="sensor-secondary">
-          <span>Humidity <strong data-value="humidity">—</strong> %</span>
-          <span>Pressure <strong data-value="pressure">—</strong> hPa</span>
+          <span>Solar irradiance <strong data-value="irradiance">Not measured</strong> W/m²</span>
+          <span>Rainfall <strong data-value="rainfall">Not measured</strong> mm/h</span>
           <span>Altitude <strong data-value="altitude">—</strong> m (barometric)</span>
           <span>Measured <strong data-value="timestamp">—</strong></span>
         </div>

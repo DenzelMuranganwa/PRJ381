@@ -2,6 +2,7 @@
 # Integration: local configuration and device credentials
 .env
 certs/
+new_certs/
 __pycache__/
 *.pyc
 
