@@ -1,6 +1,5 @@
-'use strict';
-const fs = require('node:fs');
 const path = require('node:path');
+const fs = require('node:fs');
 const http = require('node:http');
 const { loadConfig } = require('./config');
 const { TelemetryStore } = require('./services/telemetryStore');
@@ -27,13 +26,20 @@ function listen(app, config) {
 
     server.once('error', onError);
     server.once('listening', onListening);
-    server.listen(config.port, config.host);
+
+    // Render supplies process.env.PORT and requires listening on 0.0.0.0
+    const port = process.env.PORT || config.port || 3000;
+    const host = process.env.HOST || '0.0.0.0';
+    server.listen(port, host);
   });
 }
 
 async function main() {
   const envPath = path.join(__dirname, '.env');
-  if (fs.existsSync(envPath)) process.loadEnvFile(envPath);
+  if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
+    process.loadEnvFile(envPath);
+  }
+
   const config = loadConfig();
   const store = new TelemetryStore(config);
   let listening;
@@ -51,10 +57,12 @@ async function main() {
 
   const stopMqtt = config.source === 'mqtt' ? startMqtt(config, store) : () => {};
   const { server, address } = listening;
-  const port = typeof address === 'object' ? address.port : config.port;
-  console.log(`IWOS Field is running at http://localhost:${port}`);
+  const boundPort = typeof address === 'object' ? address.port : (process.env.PORT || config.port);
+  console.log(`IWOS Field is running at http://localhost:${boundPort}`);
   console.log(`Weather source: ${config.source}. Waiting for real sensor readings.`);
-  if (config.source === 'http' && !config.token) console.log('Set SENSOR_API_TOKEN in .env to enable sensor ingestion.');
+  if (config.source === 'http' && !config.token) {
+    console.log('Set SENSOR_API_TOKEN in .env to enable sensor ingestion.');
+  }
 
   function shutdown() {
     stopMqtt();
@@ -64,9 +72,11 @@ async function main() {
   process.once('SIGTERM', shutdown);
 }
 
-if (require.main === module) main().catch(error => {
-  console.error(`Server could not start: ${error.message}`);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch(error => {
+    console.error(`Server could not start: ${error.message}`);
+    process.exitCode = 1;
+  });
+}
 
 module.exports = { listen };
