@@ -12,7 +12,7 @@
 - `partials/optimization.ejs`: markup; `public/integration.css`: added styles; `public/telemetry.js`: rendering/polling.
 - `sensor_additions/`: Python hardware-side patches and optional CSV transport. Never imported by Node.
 
-The original `public/css.css`, `public/js.js`, and page router are unchanged. Existing mock telemetry is removed from the rendered pages and shared status panels. The former Sync & Sessions sample rows are replaced by actual in-memory sensor observations; no driver sessions or network throughput are fabricated.
+The original `public/css.css` and `public/js.js` remain unchanged. In non-production, the dashboard starts a simulated feed that generates synthetic telemetry. The former Sync & Sessions sample rows are replaced by actual in-memory sensor observations; no driver sessions or network throughput are fabricated.
 
 ## Weather packet
 
@@ -58,6 +58,8 @@ Vehicle packets are independently fresh for the configured interval. A new vehic
 ## Read API and errors
 
 `GET /api/status` returns a consistent snapshot: weather, vehicle, observed/received times, connection state, counters, bounded history and analysis. It has `Cache-Control: no-store`. It is read-only and has no authentication; keep the development server on your computer/private network.
+
+In non-production environments, the dashboard starts a synthetic feed by default. It submits generated weather and vehicle samples through the same store and analysis path. Route playback is separate: after starting a route, choose **Begin Simulation** on the dashboard to move the simulated GPS along it. Simulated speed accelerates from rest and varies over the route; `distance_today_km` is the accumulated simulated travel distance, not a fixed per-sample increment. With no route playback, simulated speed and distance are zero. Until then, the feed continues at the route start. The request requires the dashboard session's CSRF token, is rate-limited, and refuses to overwrite readings from a live sensor. Production always disables this endpoint. New samples stop when the dashboard is closed or left; existing samples remain visible and become stale normally.
 
 The browser polls every 2 seconds with a 5-second request timeout and no overlapping requests. Sensor acquisition remains at the station's original interval (normally 10 seconds); browser refreshes do not add forecast samples.
 

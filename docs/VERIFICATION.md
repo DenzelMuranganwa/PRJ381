@@ -12,7 +12,7 @@
 - Desktop 1440×1000 and mobile 390×844 screenshots visually inspected. No horizontal page overflow on the phone layout. Map caption and compact metric formatting corrected after review.
 - The original `public/css.css`, `public/js.js`, and `routers/telemetryRouter.js` are preserved byte-for-byte.
 
-Test packets, timestamps, certificates and screenshots were used only in the QA workspace. They are not runtime demo feeds. The delivered application starts empty and requires an actual configured source.
+Test packets, timestamps, certificates and screenshots were used only in the QA workspace. They are not part of the runtime feed. The non-production dashboard can generate synthetic readings for testing; production requires an actual configured source.
 
 ## Not verified on physical equipment
 
