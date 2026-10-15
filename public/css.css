@@ -831,6 +831,9 @@ body {
 .theme-option { width:100%; padding:7px; color:#b9c4d2; background:#0e1218; border:1px solid #2a3444; border-radius:7px; cursor:pointer; }
 .theme-option.selected { color:#fff; border-color:#7075f8; background:rgba(112,117,248,.18); }
 .profile-logout { border-top:1px solid #263142; color:#ff9a9a; }
+.profile-dropdown form { margin:0; }
+.sidebar-nav form { margin:0; }
+.sidebar-nav form .nav-link { width:100%; border:0; background:transparent; font:inherit; text-align:left; cursor:pointer; }
 .auth-nav-link { color:#cbd5e1; text-decoration:none; font-size:.82rem; font-weight:650; padding:.55rem .7rem; }
 .auth-nav-primary { background:#7075f8; border-radius:8px; color:#fff; }
 .nav-signout { color:#ff9a9a; }
@@ -933,6 +936,7 @@ body.mobile-body {
   background-color: #0e1218;
   color: #ffffff;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -943,6 +947,7 @@ body.mobile-body {
   width: 100%;
   max-width: 440px;
   height: 100vh;
+  height: 100dvh;
   max-height: 870px;
   background-color: #0e1218;
   display: flex;
@@ -954,13 +959,15 @@ body.mobile-body {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
 }
 
-/* Top Floating Header Overlay */
+/* Keep route controls in normal flow above the map. */
 .map-top-overlay {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  right: 14px;
-  z-index: 1000;
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 68px;
+  padding: 12px 14px;
+  background-color: #121720;
+  border-bottom: 1px solid #232d3d;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1013,11 +1020,12 @@ body.mobile-body {
 /* Map Viewport */
 .map-viewport {
   width: 100%;
-  height: 380px;
-  min-height: 380px;
+  flex: 1 1 42%;
+  height: auto;
+  min-height: 220px;
   position: relative;
   background-color: #0c1016;
-  z-index: 1;
+  z-index: 0;
 }
 
 #map {
@@ -1037,7 +1045,8 @@ body.mobile-body {
 
 /* Bottom Sheet Panel */
 .bottom-sheet-panel {
-  flex: 1;
+  flex: 1 1 58%;
+  min-height: 0;
   background-color: #121720;
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;

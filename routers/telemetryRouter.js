@@ -4,10 +4,39 @@ const { randomBytes, randomUUID, timingSafeEqual } = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const express = require('express');
+const { rateLimit } = require('express-rate-limit');
 
-function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
+function createTelemetryRouter(
+  userStore,
+  avatarUpload,
+  publicRoot,
+  syncSessionsCollection = null,
+  telemetryStore = null,
+) {
   const router = express.Router();
   const authenticated = (req, res, next) => requireAuth(req, res, next, userStore);
+  const routeAuthenticated = (req, res, next) => requireApiAuth(req, res, next, userStore);
+  const guestHeartbeatLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 10,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'Too many guest heartbeats. Try again shortly.' },
+  });
+  const routeCalculationLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    limit: 5,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { success: false, error: 'Too many route calculations. Try again later.' },
+  });
+  const routeSuggestionLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 20,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'Too many location searches. Try again shortly.' },
+  });
 
   router.get('/', (req, res) => res.redirect('/dashboard'));
 
@@ -22,7 +51,7 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
     const password = typeof body.password === 'string' ? body.password : '';
     const user = await userStore.authenticate(email, password);
     if (!user) return res.status(401).render('views/signin', { error: 'Email or password is incorrect.', email });
-    await startUserSession(req, user);
+    await startAuthenticatedSession(req, user, syncSessionsCollection);
     res.redirect('/dashboard');
   });
 
@@ -31,7 +60,7 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
     res.render('views/register', { error: null, values: {} });
   });
 
-  router.post('/register', avatarUpload, requireCsrf, async (req, res) => {
+  router.post('/register', requireCsrf, async (req, res) => {
     const body = req.body || {};
     const values = {
       fullName: field(body.fullName),
@@ -41,19 +70,9 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
     const password = typeof body.password === 'string' ? body.password : '';
     let error = validateRegistration({ ...values, password });
     if (error) return res.status(400).render('views/register', { error, values });
-    const avatarExtension = req.file && validateAvatar(req.file);
-    if (req.file && !avatarExtension) return res.status(400).render('views/register', {
-      error: 'The selected file is not a supported JPEG, PNG, GIF, or WebP image.',
-      values,
-    });
-
     try {
-      let user = await userStore.createUser({ ...values, password });
-      if (req.file) {
-        const profilePictureUrl = await saveAvatar(req.file, avatarExtension, publicRoot);
-        user = await userStore.updateProfilePicture(user.id, profilePictureUrl);
-      }
-      await startUserSession(req, user);
+      const user = await userStore.createUser({ ...values, password });
+      await startAuthenticatedSession(req, user, syncSessionsCollection);
       res.redirect('/dashboard');
     } catch (creationError) {
       if (creationError.code === 'EMAIL_EXISTS') {
@@ -63,7 +82,6 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
     }
   });
 
-  router.get('/logout', destroySession);
   router.post('/logout', requireCsrf, destroySession);
 
   router.get('/settings', authenticated, (req, res) => {
@@ -138,26 +156,56 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
     });
   });
 
+  router.post('/api/sessions/guest-heartbeat', guestHeartbeatLimiter, async (req, res) => {
+    if (!syncSessionsCollection) {
+      return res.status(503).json({ error: 'Session persistence is not configured.' });
+    }
+    if (req.session.user) return res.status(204).end();
+
+    const now = Date.now();
+    if (!req.session.guestSessionId || !req.session.guestSessionStartedAt) {
+      req.session.guestSessionId = `SES-GUEST-${randomBytes(4).toString('hex')}`;
+      req.session.guestSessionStartedAt = now;
+    }
+    await upsertSyncSession(syncSessionsCollection, req.session.guestSessionId, {
+      driverName: 'Guest Observer',
+      duration: formatDuration(now - req.session.guestSessionStartedAt),
+      isGuest: true,
+      packetsSent: 0,
+      segment: 'Public Spectator View',
+      status: 'Active',
+      statusClass: 'status-active',
+      updatedAt: new Date(now),
+    });
+    res.status(204).end();
+  });
+
   router.get('/sync-sessions', authenticated, (req, res) => {
     res.render('pages/Sync&Sessions', { activePage: 'sync', pageTitle: 'Sync & Logs' });
   });
 
   // 1. ROUTE SETUP PAGE: Passes position and default markers
-  router.get('/route-setup', (req, res) => {
+  router.get('/route-setup', authenticated, (req, res) => {
+    const snapshot = telemetryStore ? telemetryStore.snapshot() : null;
+    const weather = snapshot && snapshot.weatherAgeMs <= telemetryStore.config.staleAfterMs
+      ? snapshot.weather
+      : null;
+    const values = weather ? weather.values : null;
+    const hasGps = values && Number.isFinite(values.latitude) && Number.isFinite(values.longitude);
+    const latitude = hasGps ? values.latitude : null;
+    const longitude = hasGps ? values.longitude : null;
+    const windKmh = values && Number.isFinite(values.wind_speed_ms)
+      ? values.wind_speed_ms * 3.6
+      : null;
     res.render('pages/route-setUp', {
       pageTitle: 'Route Navigation - IWOS',
       activePage: 'route-setup',
-      initLat: -25.7479,
-      initLng: 28.2293,
-      windSpeed: 13,
       piPosition: {
-        lat: '-25.7479',
-        lng: '28.2293',
-        lastSeen: new Date(),
-        windKmh: 13,
-        tempC: 25,
-        irradiance: 850
+        lat: latitude,
+        lng: longitude,
+        windKmh,
       },
+      hasGps: Boolean(hasGps),
       savedPlaces: [
         { name: 'Kempton Park Hub', coords: '-26.1325, 28.2312', distance: 'Sector 1' },
         { name: 'Pretoria Proving Loop', coords: '-25.7479, 28.2293', distance: 'Sector 2' }
@@ -165,23 +213,87 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
     });
   });
 
-  // 2. LIVE PI GPS POLLING API
-  router.get('/api/vehicle/gps', (req, res) => {
+  router.get('/api/vehicle/gps', routeAuthenticated, (req, res) => {
+    const snapshot = telemetryStore ? telemetryStore.snapshot() : null;
+    const weather = snapshot && snapshot.weatherAgeMs <= telemetryStore.config.staleAfterMs
+      ? snapshot.weather
+      : null;
+    const values = weather ? weather.values : null;
+    if (!values || !Number.isFinite(values.latitude) || !Number.isFinite(values.longitude)) {
+      return res.status(503).json({ error: 'No fresh GPS fix is available from the weather telemetry.' });
+    }
     res.json({
-      latitude: '-25.7479',
-      longitude: '28.2293',
-      wind_speed_ms: 3.6,
-      temperature_c: 25,
-      timestamp: new Date()
+      latitude: values.latitude,
+      longitude: values.longitude,
+      wind_speed_ms: values.wind_speed_ms,
+      temperature_c: values.temperature_c,
+      timestamp: weather.timestamp,
     });
   });
 
-  // 3. SOLAR ROUTE CALCULATION API: OSRM with Steps + Komoot/Photon + Physics Engine
-  router.post('/api/calculate-solar-route', async (req, res) => {
-    const { startLat, startLng, destination, headwind } = req.body || {};
+  router.get('/api/route-suggestions', routeAuthenticated, routeSuggestionLimiter, async (req, res) => {
+    const query = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+    if (query.length < 3 || query.length > 120) {
+      return res.status(400).json({ error: 'Search text must be between 3 and 120 characters.' });
+    }
+    const lat = parseCoordinate(req.query.lat, -90, 90);
+    const lon = parseCoordinate(req.query.lon, -180, 180);
+    if (lat === null || lon === null) {
+      return res.status(400).json({ error: 'Valid location-bias coordinates are required.' });
+    }
 
-    if (!startLat || !startLng || !destination) {
-      return res.status(400).json({ success: false, error: 'Start coordinates and destination are required' });
+    try {
+      const url = new URL('https://photon.komoot.io/api/');
+      url.searchParams.set('q', query);
+      url.searchParams.set('lat', String(lat));
+      url.searchParams.set('lon', String(lon));
+      url.searchParams.set('limit', '5');
+      const data = await fetchJson(url, {}, 'Location search');
+      const suggestions = Array.isArray(data.features)
+        ? data.features.flatMap(feature => {
+          const coordinates = feature.geometry && feature.geometry.coordinates;
+          const properties = feature.properties || {};
+          if (!Array.isArray(coordinates) || coordinates.length < 2) return [];
+          const suggestionLat = Number(coordinates[1]);
+          const suggestionLon = Number(coordinates[0]);
+          if (!Number.isFinite(suggestionLat) || !Number.isFinite(suggestionLon)
+            || suggestionLat < -90 || suggestionLat > 90
+            || suggestionLon < -180 || suggestionLon > 180) return [];
+          const street = typeof properties.street === 'string' ? properties.street : '';
+          const houseNumber = typeof properties.housenumber === 'string' ? properties.housenumber : '';
+          const name = typeof properties.name === 'string' ? properties.name : '';
+          const primary = name || `${houseNumber ? `${houseNumber} ` : ''}${street}`.trim() || 'Location';
+          const secondary = [
+            street !== primary ? street : '',
+            properties.city || properties.town || properties.district,
+            properties.state,
+            properties.country,
+          ].filter(value => typeof value === 'string' && value.length > 0).join(', ');
+          return [{ name: primary, secondary, latitude: suggestionLat, longitude: suggestionLon }];
+        })
+        : [];
+      res.json({ suggestions });
+    } catch (error) {
+      console.error('Location search failed:', error);
+      res.status(error.status || 502).json({ error: 'Location search is temporarily unavailable.' });
+    }
+  });
+
+  router.post('/api/calculate-solar-route', routeAuthenticated, routeCalculationLimiter, async (req, res) => {
+    const { startLat, startLng, destination, headwind } = req.body || {};
+    const originLat = parseCoordinate(startLat, -90, 90);
+    const originLng = parseCoordinate(startLng, -180, 180);
+    const windSpeedKmh = headwind === undefined
+      ? 0
+      : parseCoordinate(headwind, -200, 200);
+    if (originLat === null || originLng === null) {
+      return res.status(400).json({ success: false, error: 'Valid start latitude and longitude are required.' });
+    }
+    if (typeof destination !== 'string' || destination.trim().length < 1 || destination.trim().length > 200) {
+      return res.status(400).json({ success: false, error: 'Destination must be between 1 and 200 characters.' });
+    }
+    if (windSpeedKmh === null) {
+      return res.status(400).json({ success: false, error: 'Headwind must be a number between -200 and 200 km/h.' });
     }
 
     try {
@@ -191,63 +303,66 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
       // Check for coordinate format (e.g. "-25.76746, 28.23726")
       const coordMatch = destStr.match(/^([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)$/);
       if (coordMatch) {
-        destLat = parseFloat(coordMatch[1]);
-        destLng = parseFloat(coordMatch[2]);
+        destLat = parseCoordinate(coordMatch[1], -90, 90);
+        destLng = parseCoordinate(coordMatch[2], -180, 180);
+        if (destLat === null || destLng === null) {
+          return res.status(400).json({ success: false, error: 'Destination coordinates are outside valid latitude/longitude ranges.' });
+        }
       } else {
-        // Geocode with Komoot / Photon
         let resolved = false;
         try {
-          const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(destStr)}&limit=1`;
-          const photonRes = await fetch(photonUrl, {
-            headers: { 'User-Agent': 'IWOS-SolarVehicleTracker/1.0' }
-          });
-          if (photonRes.ok) {
-            const photonData = await photonRes.json();
-            if (photonData?.features?.length > 0) {
-              const [lon, lat] = photonData.features[0].geometry.coordinates;
-              destLat = lat;
-              destLng = lon;
-              resolved = true;
-            }
+          const photonUrl = new URL('https://photon.komoot.io/api/');
+          photonUrl.searchParams.set('q', destStr);
+          photonUrl.searchParams.set('limit', '1');
+          const photonData = await fetchJson(photonUrl, {}, 'Photon geocoder');
+          const coordinates = photonData.features?.[0]?.geometry?.coordinates;
+          if (Array.isArray(coordinates) && coordinates.length >= 2) {
+            destLat = parseCoordinate(coordinates[1], -90, 90);
+            destLng = parseCoordinate(coordinates[0], -180, 180);
+            resolved = destLat !== null && destLng !== null;
           }
-        } catch (e) {
-          console.warn('Photon fallback:', e.message);
+        } catch (error) {
+          console.warn('Photon geocoder failed; trying Nominatim:', error.message);
         }
 
-        // Fallback to Nominatim
         if (!resolved) {
-          const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destStr)}`;
-          const nomRes = await fetch(nomUrl, {
+          const nomUrl = new URL('https://nominatim.openstreetmap.org/search');
+          nomUrl.searchParams.set('format', 'json');
+          nomUrl.searchParams.set('limit', '1');
+          nomUrl.searchParams.set('q', destStr);
+          const nomData = await fetchJson(nomUrl, {
             headers: {
               'User-Agent': 'IWOS-TelemetryApp-V2/1.0 (telemetry-contact@iwos.org)',
-              'Accept': 'application/json'
+              Accept: 'application/json',
             }
-          });
-          const nomData = await nomRes.json();
-          if (!nomData || !nomData.length) {
-            throw new Error(`Could not find destination: "${destStr}"`);
+          }, 'Nominatim geocoder');
+          if (!Array.isArray(nomData) || !nomData.length) {
+            return res.status(404).json({ success: false, error: 'Could not find that destination.' });
           }
-          destLat = parseFloat(nomData[0].lat);
-          destLng = parseFloat(nomData[0].lon);
+          destLat = parseCoordinate(nomData[0].lat, -90, 90);
+          destLng = parseCoordinate(nomData[0].lon, -180, 180);
+          if (destLat === null || destLng === null) {
+            throw new Error('Nominatim returned invalid coordinates.');
+          }
         }
       }
 
-      // Fetch driving route from OSRM with steps=true for navigation maneuvers
-      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${destLng},${destLat}?overview=full&geometries=geojson&steps=true&alternatives=true`;
-      const osrmRes = await fetch(osrmUrl, {
-        headers: { 'User-Agent': 'IWOS-SolarVehicleTracker/1.0' }
-      });
-      const osrmData = await osrmRes.json();
+      const osrmUrl = new URL(
+        `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}`,
+      );
+      osrmUrl.searchParams.set('overview', 'full');
+      osrmUrl.searchParams.set('geometries', 'geojson');
+      osrmUrl.searchParams.set('steps', 'true');
+      osrmUrl.searchParams.set('alternatives', '3');
+      const osrmData = await fetchJson(osrmUrl, {}, 'OSRM route service');
 
       if (osrmData.code !== 'Ok' || !osrmData.routes?.length) {
         return res.status(404).json({ success: false, error: 'No driving route found.' });
       }
 
-      // Solar Car Physics
       const carMass = 280;
       const panelArea = 4.0;
       const irradiance = 850;
-      const windSpeedKmh = parseFloat(headwind) || 0;
       const rho = 1.2;
       const cdA = 0.14;
       const crr = 0.0035;
@@ -257,28 +372,35 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
 
       const evaluatedRoutes = [];
 
-      for (let i = 0; i < osrmData.routes.length; i++) {
+      for (let i = 0; i < Math.min(osrmData.routes.length, 3); i++) {
         const r = osrmData.routes[i];
+        if (!Number.isFinite(r.distance) || r.distance <= 0
+          || !Number.isFinite(r.duration) || r.duration <= 0
+          || !Array.isArray(r.geometry?.coordinates) || r.geometry.coordinates.length < 2) {
+          continue;
+        }
         const durationSec = r.duration;
         const distanceM = r.distance;
         const avgSpeedMS = distanceM / durationSec;
 
+        const coordinates = r.geometry.coordinates;
+        const step = Math.max(1, Math.ceil(coordinates.length / 100));
+        const sampled = coordinates.filter((_, index) => index % step === 0).slice(0, 100);
+        const lastCoordinate = coordinates[coordinates.length - 1];
+        if (sampled.at(-1) !== lastCoordinate && sampled.length < 100) sampled.push(lastCoordinate);
+        const elevationUrl = new URL('https://api.open-meteo.com/v1/elevation');
+        elevationUrl.searchParams.set('latitude', sampled.map(point => point[1]).join(','));
+        elevationUrl.searchParams.set('longitude', sampled.map(point => point[0]).join(','));
+        const elevationData = await fetchJson(elevationUrl, {}, 'Elevation service');
+        if (!Array.isArray(elevationData.elevation)
+          || elevationData.elevation.length !== sampled.length
+          || elevationData.elevation.some(value => !Number.isFinite(value))) {
+          throw new Error('Elevation service returned incomplete elevation data.');
+        }
         let elevationGain = 0;
-        try {
-          const sampled = r.geometry.coordinates.filter((_, idx) => idx % 10 === 0);
-          const lats = sampled.map(c => c[1]).join(',');
-          const lons = sampled.map(c => c[0]).join(',');
-          const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`);
-          if (elevRes.ok) {
-            const elevData = await elevRes.json();
-            const arr = elevData.elevation || [];
-            for (let j = 1; j < arr.length; j++) {
-              const diff = arr[j] - arr[j - 1];
-              if (diff > 0) elevationGain += diff;
-            }
-          }
-        } catch {
-          elevationGain = 0;
+        for (let index = 1; index < elevationData.elevation.length; index++) {
+          const difference = elevationData.elevation[index] - elevationData.elevation[index - 1];
+          if (difference > 0) elevationGain += difference;
         }
 
         const airSpeedMS = avgSpeedMS + ((windSpeedKmh * 1000) / 3600);
@@ -320,17 +442,25 @@ function createTelemetryRouter(userStore, avatarUpload, publicRoot) {
       }
 
       evaluatedRoutes.sort((a, b) => parseFloat(a.netBatteryDrain) - parseFloat(b.netBatteryDrain));
+      if (!evaluatedRoutes.length) {
+        return res.status(502).json({ success: false, error: 'The routing service returned no usable route.' });
+      }
 
       res.json({
         success: true,
-        origin: [parseFloat(startLat), parseFloat(startLng)],
+        origin: [originLat, originLng],
         destination: [destLat, destLng],
         routes: evaluatedRoutes
       });
 
     } catch (error) {
-      console.error('Route calculation error:', error.message);
-      res.status(500).json({ success: false, error: error.message || 'Route calculation failed' });
+      console.error('Route calculation failed:', error);
+      res.status(error.status || 502).json({
+        success: false,
+        error: error.status === 504
+          ? 'A routing data provider timed out. Try again shortly.'
+          : 'Route calculation is temporarily unavailable because a routing data provider failed.',
+      });
     }
   });
 
@@ -345,6 +475,44 @@ async function requireAuth(req, res, next, userStore) {
   res.locals.currentUser = user;
   res.locals.themePreference = user.themePreference;
   next();
+}
+
+async function requireApiAuth(req, res, next, userStore) {
+  const userId = req.session.user?.id || req.session.userId;
+  const user = req.session.user || (userId ? await userStore.getById(userId) : null);
+  if (!user) return res.status(401).json({ success: false, error: 'Sign in to use route planning.' });
+  req.session.user = user;
+  next();
+}
+
+function parseCoordinate(value, min, max) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= min && number <= max ? number : null;
+}
+
+async function fetchJson(url, options, provider) {
+  let response;
+  try {
+    response = await fetch(url, { ...options, signal: AbortSignal.timeout(8000) });
+  } catch (error) {
+    const wrappedError = new Error(`${provider} request failed: ${error.message}`);
+    wrappedError.status = error.name === 'TimeoutError' || error.name === 'AbortError' ? 504 : 502;
+    throw wrappedError;
+  }
+  if (!response.ok) {
+    const error = new Error(`${provider} returned HTTP ${response.status}.`);
+    error.status = 502;
+    throw error;
+  }
+  try {
+    return await response.json();
+  } catch (cause) {
+    const error = new Error(`${provider} returned invalid JSON.`, { cause });
+    error.status = 502;
+    throw error;
+  }
 }
 
 function requireCsrf(req, res, next) {
@@ -371,12 +539,52 @@ function startUserSession(req, user) {
   });
 }
 
+async function startAuthenticatedSession(req, user, syncSessionsCollection) {
+  const guestSessionId = req.session.guestSessionId;
+  await startUserSession(req, user);
+  if (!syncSessionsCollection) return;
+
+  if (!req.session.driverSessionId || !req.session.driverSessionStartedAt) {
+    req.session.driverSessionId = `SES-DRIVER-${randomUUID()}`;
+    req.session.driverSessionStartedAt = Date.now();
+  }
+  if (guestSessionId) {
+    await syncSessionsCollection.deleteOne({ sessionId: guestSessionId, isGuest: true });
+  }
+  const now = Date.now();
+  await upsertSyncSession(syncSessionsCollection, req.session.driverSessionId, {
+    driverName: user.fullName,
+    duration: formatDuration(now - req.session.driverSessionStartedAt),
+    isGuest: false,
+    packetsSent: 0,
+    segment: 'Solar Route Track Active',
+    status: 'Active',
+    statusClass: 'status-active',
+    updatedAt: new Date(now),
+  });
+}
+
+function upsertSyncSession(collection, sessionId, fields) {
+  return collection.updateOne(
+    { sessionId },
+    { $set: fields, $setOnInsert: { sessionId } },
+    { upsert: true },
+  );
+}
+
+function formatDuration(durationMs) {
+  const totalMinutes = Math.floor(durationMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`;
+}
+
 function destroySession(req, res, next) {
-  if (!req.session) return res.redirect('/signup');
+  if (!req.session) return res.redirect('/dashboard');
   req.session.destroy(error => {
     if (error) return next(error);
     res.clearCookie('iwos.sid', { httpOnly: true, sameSite: 'lax', secure: Boolean(req.app.get('env') === 'production') });
-    res.redirect('/signup');
+    res.redirect('/dashboard');
   });
 }
 

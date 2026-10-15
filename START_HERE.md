@@ -15,13 +15,31 @@ This is a complete, ready-to-configure copy of your Express/EJS project. The two
 node -v
 npm install
 Copy-Item .env.example .env
-npm start
 ```
 
 Your existing Node 24 installation is sufficient. The project requires Node 22.16 or newer. The supplied `package.json` has a working `start` script; `node server.js` works too. `npm ci` can replace `npm install` when using this ZIP's unchanged lockfile.
 
-5. Open **http://localhost:3000/dashboard**. You should initially see **Waiting for sensor**. This is correct: no readings are invented.
-6. Stop with **Ctrl+C** before editing `.env`, and restart with `npm start` after changes. Only create `.env` once; do not overwrite it after filling in your configuration.
+5. Before starting the server, edit `.env` and set `MONGODB_URI` to your
+   MongoDB connection string. Also generate a unique `SESSION_SECRET` locally
+   and place it in `.env`:
+
+```powershell
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+`SESSION_SECRET` signs Express browser sessions. Keep it private and stable;
+changing it signs out existing users. Generate it separately from the HTTP
+sensor token described in section 3B. For production, it must be at least 32
+bytes.
+
+6. Start the server:
+
+```powershell
+npm start
+```
+
+7. Open **http://localhost:3000/dashboard**. You should initially see **Waiting for sensor**. This is correct: no readings are invented.
+8. Stop with **Ctrl+C** before editing `.env`, and restart with `npm start` after changes. Only create `.env` once; do not overwrite it after filling in your configuration.
 
 ## 2. Apply two small sensor-side fixes
 
@@ -46,7 +64,7 @@ The station already contains this publishing code. No HTTP bridge is needed in M
 
 1. Create a `certs` folder beside the Node project's `server.js`.
 2. Have the AWS IoT project administrator provide a dashboard client certificate/key and Amazon root CA. The dashboard identity needs permission to connect with its client ID, subscribe to `iwos/weather`, and receive that topic's messages. A publish-only station policy is insufficient. Keep the dashboard client ID different from `iwos-lead-vehicle-01`; otherwise clients can disconnect each other.
-3. Place those files in `certs` using these names (or change the paths below to their actual filenames).
+3. Place those files in `certs` using these names (or change the paths below to their actual filenames). The `.env` settings contain paths to the files, not the PEM certificate or private-key contents. Keep the private key out of source control and do not send it to the browser.
 4. Open `.env` in VS Code and set:
 
 ```dotenv
@@ -78,6 +96,14 @@ The subscriber uses TLS and validates the server certificate. It reconnects auto
 
 Your uploaded sensor ZIP includes a private key. It is deliberately excluded from this integrated download. Ask the project administrator to replace that shared credential and issue a separate dashboard identity before distributing the project further.
 
+For this workspace, the dashboard certificate files were copied from the
+hardware publisher's `Hardware/certs` folder into the Git-ignored `certs`
+folder. This avoids changing the hardware files. The dashboard uses a
+different MQTT client ID, so the AWS IoT policy attached to this shared
+certificate must explicitly permit that client ID to connect and subscribe.
+Sharing the hardware identity is suitable only for a controlled test; create
+a dedicated dashboard certificate before production use.
+
 ## 3B. Same-network CSV bridge — no AWS subscriber setup needed
 
 Data path: sensors → real `data/weather_log.csv` → automatic Python bridge → Node API → optimisation → web page.
@@ -86,13 +112,13 @@ Use this if the sensor's CSV is updating and you want to connect your PC directl
 
 ### On your Windows PC
 
-1. Generate a token once in the VS Code terminal:
+1. Generate a dedicated sensor API token in the VS Code terminal:
 
 ```powershell
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-2. Copy the resulting token. Set the following in `.env`:
+2. Copy the resulting token into `SENSOR_API_TOKEN` in the server's `.env`:
 
 ```dotenv
 PORT=3000
@@ -102,6 +128,12 @@ SENSOR_API_TOKEN=PASTE_YOUR_GENERATED_TOKEN_HERE
 SENSOR_STALE_SECONDS=60
 SENSOR_TIMEZONE_OFFSET=+02:00
 ```
+
+`SENSOR_API_TOKEN` is a locally generated shared credential for HTTP sensor
+ingestion. It is different from `SESSION_SECRET`: the session secret stays on
+the server, while the sensor token must be configured on both the server and
+the Raspberry Pi bridge. The token is not issued by MongoDB or another service.
+Never reuse the session secret as the sensor token.
 
 3. Run `ipconfig` in the Windows terminal. Find the IPv4 address for the Wi-Fi/Ethernet adapter connected to the same network as the Pi, for example `192.168.1.25`.
 4. Run `npm start`. If Windows asks about Node network access, allow it on your private network. The bridge must be able to reach TCP port 3000. Use this HTTP mode on a trusted local network; use TLS MQTT for cloud connections. Do not port-forward this development dashboard to the internet.
@@ -119,6 +151,10 @@ python3 dashboard_bridge.py
 ```
 
 Replace the example address with **your PC's IPv4 address**. Do not use `localhost` here: on the Pi that refers to the Pi, not your PC. These exports apply to this terminal session. The bridge needs only Python's standard library.
+
+The Pi's `SENSOR_API_TOKEN` must exactly match the value in the Windows
+server's `.env`. If the token changes, update both places and restart the
+server and bridge. Do not put live secrets in source control or documentation.
 
 3. Leave the bridge running. In a **second Pi terminal**, inside the same sensor project folder, start the existing station:
 
