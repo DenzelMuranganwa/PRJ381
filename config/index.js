@@ -19,6 +19,7 @@ function loadConfig(env = process.env) {
   return {
     root: path.resolve(__dirname, '..'), port: number('PORT', 3000, 0, 65535),
     host: env.HOST || '127.0.0.1', source, token: env.SENSOR_API_TOKEN || '',
+    simulationEnabled: !isProduction && env.ENABLE_TELEMETRY_SIMULATION !== 'false',
     mongodbUri: env.MONGODB_URI || '',
     sessionSecret: env.SESSION_SECRET || randomBytes(32).toString('hex'), isProduction,
     timezoneOffset: offset, staleAfterMs: number('SENSOR_STALE_SECONDS', 60, 10, 3600) * 1000,

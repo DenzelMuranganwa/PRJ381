@@ -88,6 +88,7 @@ test('HTTP ingestion, authentication, page rendering, limits and malformed JSON'
   const guestHtml=await guestDashboard.text();
   assert.match(guestHtml,/>Guest</);
   assert.match(guestHtml,/TELEMETRY FEED/);
+  assert.doesNotMatch(guestHtml,/data-value="(?:irradiance|rainfall)"/);
   assert.match(guestHtml, /href="\/dashboard#optimization-section"/);
   assert.equal((await fetch(url+'/',{redirect:'manual'})).headers.get('location'),'/dashboard');
   for(const route of ['/sync-sessions','/route-setup']) {
@@ -95,6 +96,101 @@ test('HTTP ingestion, authentication, page rendering, limits and malformed JSON'
     assert.equal(response.status,302);assert.equal(response.headers.get('location'),'/signup');
   }
   for(const route of ['/telemetry.js','/integration.css']) assert.equal((await fetch(url+route)).status,200);
+});
+
+test('browser simulation feed uses the telemetry store and enables complete optimization', async t => {
+  const store = new TelemetryStore(config);
+  const server = createApp(config, store).listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${server.address().port}`;
+  const dashboard = await fetch(`${url}/dashboard`);
+  const html = await dashboard.text();
+  const csrf = html.match(/data-csrf-token="([^"]+)"/)?.[1];
+  const cookie = dashboard.headers.get('set-cookie')?.split(';', 1)[0];
+  assert.ok(csrf);
+  assert.ok(cookie);
+  assert.match(html, /Starting automatic simulated feed/);
+  assert.doesNotMatch(html, /id="simulation-feed-toggle"/);
+  assert.match(html, /Set \/ Change Route/);
+  assert.match(html, /id="beginSimulationBtn"/);
+  assert.match(html, /Begin Simulation/);
+
+  const simulationResponse = await fetch(`${url}/api/simulation/telemetry`, {
+    method: 'POST',
+    headers: { Cookie: cookie, 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      latitude: -25.751,
+      longitude: 28.231,
+      speed_kmh: 32.5,
+      distance_today_km: 0.012,
+    }),
+  });
+  assert.equal(simulationResponse.status, 200);
+  const statusResponse = await fetch(`${url}/api/status`, { headers: { Cookie: cookie } });
+  const status = await statusResponse.json();
+  assert.equal(status.weather.source, 'simulation');
+  assert.equal(status.vehicle.source, 'simulation');
+  assert.equal(status.weather.values.latitude, -25.751);
+  assert.equal(status.weather.values.longitude, 28.231);
+  assert.equal(status.vehicle.values.speed_kmh, 32.5);
+  assert.equal(status.vehicle.values.distance_today_km, 0.012);
+  assert.equal(status.analysis.status, 'ready');
+  assert.equal(status.analysis.inputCoverage, 100);
+
+  const invalidGpsResponse = await fetch(`${url}/api/simulation/telemetry`, {
+    method: 'POST',
+    headers: { Cookie: cookie, 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ latitude: 91, longitude: 28 }),
+  });
+  assert.equal(invalidGpsResponse.status, 400);
+});
+
+test('simulation feed requires CSRF protection and cannot replace real or production telemetry', async t => {
+  const store = new TelemetryStore(config);
+  store.ingest(reading(Date.now(), { irradiance_wm2: 900, rainfall_mmh: 0 }));
+  const server = createApp(config, store).listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => server.close());
+  const url = `http://127.0.0.1:${server.address().port}`;
+  const dashboard = await fetch(`${url}/dashboard`);
+  const html = await dashboard.text();
+  const csrf = html.match(/data-csrf-token="([^"]+)"/)?.[1];
+  const cookie = dashboard.headers.get('set-cookie')?.split(';', 1)[0];
+
+  const missingToken = await fetch(`${url}/api/simulation/telemetry`, {
+    method: 'POST',
+    headers: { Cookie: cookie },
+  });
+  assert.equal(missingToken.status, 403);
+  const protectedResponse = await fetch(`${url}/api/simulation/telemetry`, {
+    method: 'POST',
+    headers: { Cookie: cookie, 'X-CSRF-Token': csrf },
+  });
+  assert.equal(protectedResponse.status, 409);
+  assert.equal(store.weather.source, 'http');
+
+  const productionConfig = loadConfig({
+    NODE_ENV: 'production',
+    SESSION_SECRET: 'production-test-session-secret-32-bytes',
+    SENSOR_API_TOKEN: 'test-only-token',
+    ENABLE_TELEMETRY_SIMULATION: 'true',
+  });
+  const productionServer = createApp(productionConfig, new TelemetryStore(productionConfig))
+    .listen(0, '127.0.0.1');
+  await once(productionServer, 'listening');
+  t.after(() => productionServer.close());
+  const productionUrl = `http://127.0.0.1:${productionServer.address().port}`;
+  const productionDashboard = await fetch(`${productionUrl}/dashboard`);
+  const productionHtml = await productionDashboard.text();
+  const productionToken = productionHtml.match(/data-csrf-token="([^"]+)"/)?.[1];
+  const productionCookie = productionDashboard.headers.get('set-cookie')?.split(';', 1)[0];
+  assert.doesNotMatch(productionHtml, /Starting automatic simulated feed/);
+  const disabledResponse = await fetch(`${productionUrl}/api/simulation/telemetry`, {
+    method: 'POST',
+    headers: { Cookie: productionCookie, 'X-CSRF-Token': productionToken },
+  });
+  assert.equal(disabledResponse.status, 404);
 });
 
 test('complete aligned history enables efficiency and performance forecasts; stale vehicle pauses them', () => {

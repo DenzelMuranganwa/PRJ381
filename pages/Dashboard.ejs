@@ -213,7 +213,7 @@
     }
   </style>
 </head>
-<body data-theme="<%= typeof themePreference !== 'undefined' ? themePreference : 'dark' %>" data-authenticated="<%= currentUser ? 'true' : 'false' %>">
+<body data-theme="<%= typeof themePreference !== 'undefined' ? themePreference : 'dark' %>" data-authenticated="<%= currentUser ? 'true' : 'false' %>" data-simulation-enabled="<%= typeof simulationEnabled !== 'undefined' && simulationEnabled ? 'true' : 'false' %>" data-csrf-token="<%= csrfToken %>">
 
   <%- include('../partials/header', { activePage: 'dashboard' }) %>
 
@@ -225,14 +225,15 @@
         <h3 class="section-title">TELEMETRY FEED</h3>
 
         <% const feeds = [
-          {key:'irradiance', label:'Irradiance', unit:'W/m²', color:'val-amber', icon:'sun'},
           {key:'temperature', label:'Atmos', unit:'°C', color:'val-blue', icon:'thermometer'},
-          {key:'wind', label:'Wind', unit:'km/h', color:'val-cyan', icon:'wind'},
-          {key:'rainfall', label:'Rainfall', unit:'mm/h', color:'val-red', icon:'droplet'}
+          {key:'wind', label:'Wind', unit:'km/h', color:'val-cyan', icon:'wind'}
         ]; %>
         <div class="sensor-status-row" role="status" aria-live="polite">
           <span class="sensor-pill" data-feed-state>Waiting</span>
           <span data-feed-detail>Connecting to dashboard…</span>
+          <% if (typeof simulationEnabled !== 'undefined' && simulationEnabled) { %>
+            <span id="simulation-feed-status" class="sensor-note" aria-live="polite">Starting automatic simulated feed…</span>
+          <% } %>
         </div>
         <noscript>Enable JavaScript to receive live sensor updates.</noscript>
         <div class="telemetry-cards-row">
@@ -315,9 +316,11 @@
               <a href="/route-setup" class="mobile-btn" style="display: inline-block; text-align: center; text-decoration: none; padding: 8px 16px; font-size: 0.8rem; background: #7075f8; color: #fff; border-radius: 8px; font-weight: 600;">
                 Set / Change Route
               </a>
-              <button type="button" id="simulateDriveBtn" class="mobile-btn" style="padding: 8px 16px; font-size: 0.8rem; background: #00e599; color: #0b111a; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;">
-                ▶ Simulate Car Drive
-              </button>
+              <% if (typeof simulationEnabled !== 'undefined' && simulationEnabled) { %>
+                <button type="button" id="beginSimulationBtn" class="mobile-btn" disabled>
+                  Begin Simulation
+                </button>
+              <% } %>
             </div>
           </div>
 
@@ -464,6 +467,7 @@
       let activePolyline = null;
       let activeDestMarker = null;
       let isRerouting = false;
+      let nextRerouteAt = 0;
       let topHud = null;
       let bottomHud = null;
 
@@ -607,7 +611,12 @@
 
         const offRouteDist = minDistanceToPolyline(currentPos, coords);
         if (offRouteDist > 50) {
-          triggerRealtimeReroute(currentPos);
+          if (Date.now() >= nextRerouteAt) {
+            triggerRealtimeReroute(currentPos);
+          } else {
+            const seconds = Math.ceil((nextRerouteAt - Date.now()) / 1000);
+            topHud.querySelector('.nav-maneuver-sub').textContent = `Off route · retrying in ${seconds}s`;
+          }
           return;
         }
 
@@ -679,6 +688,7 @@
       async function triggerRealtimeReroute(currentPos) {
         if (isRerouting) return;
         isRerouting = true;
+        nextRerouteAt = Date.now() + 30000;
 
         topHud.classList.add('rerouting');
         topHud.querySelector('.nav-maneuver-icon').innerHTML = `<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><polyline points="21 3 21 9 15 9"/></svg>`;
@@ -781,20 +791,24 @@
       const gpsObserver = new MutationObserver(() => {
         const gpsEl = document.querySelector('[data-value="gps"]');
         if (!gpsEl) return;
-        const text = gpsEl.textContent.trim();
-        const coords = text.match(/^([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)$/);
-        if (coords) {
-          const lat = parseFloat(coords[1]);
-          const lng = parseFloat(coords[2]);
+        const lat = Number(gpsEl.dataset.latitude);
+        const lng = Number(gpsEl.dataset.longitude);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
           const pos = parseToLatLng([lat, lng]);
           carMarker.setLatLng(pos);
-          updateNavigationGuidance(pos);
+          if (navData && navData.isActive && document.body.dataset.routeSimulation !== 'idle') {
+            map.panTo(pos, { animate: false });
+            updateNavigationGuidance(pos);
+          }
         }
       });
 
       const gpsElement = document.querySelector('[data-value="gps"]');
       if (gpsElement) {
-        gpsObserver.observe(gpsElement, { childList: true, characterData: true, subtree: true });
+        gpsObserver.observe(gpsElement, {
+          attributes: true,
+          attributeFilter: ['data-latitude', 'data-longitude'],
+        });
       }
     });
   </script>

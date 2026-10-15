@@ -12,6 +12,7 @@ function createTelemetryRouter(
   publicRoot,
   syncSessionsCollection = null,
   telemetryStore = null,
+  config = {},
 ) {
   const router = express.Router();
   const authenticated = (req, res, next) => requireAuth(req, res, next, userStore);
@@ -25,10 +26,19 @@ function createTelemetryRouter(
   });
   const routeCalculationLimiter = rateLimit({
     windowMs: 10 * 60 * 1000,
-    limit: 5,
+    limit: 20,
+    keyGenerator: req => `user:${req.session.user.id}`,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     message: { success: false, error: 'Too many route calculations. Try again later.' },
+  });
+  const simulationTelemetryLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 20,
+    keyGenerator: req => `session:${req.sessionID}`,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: 'Simulated feed is updating too quickly. Wait a moment and try again.' },
   });
   const routeSuggestionLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -152,8 +162,69 @@ function createTelemetryRouter(
     res.render('pages/Dashboard', { 
       activePage: 'dashboard',
       pageTitle: 'Telemetry Dashboard',
+      simulationEnabled: Boolean(config.simulationEnabled),
       dynamics: { lat: '-25.7479', lng: '28.2293', speed: 13, logToday: 0 }
     });
+  });
+
+  router.post('/api/simulation/telemetry', (req, res, next) => {
+    if (config.isProduction || !config.simulationEnabled || !telemetryStore) {
+      return res.status(404).json({ error: 'The simulated feed is disabled.' });
+    }
+    next();
+  }, simulationTelemetryLimiter, requireSimulationCsrf, express.json({ limit: '1kb', strict: true }), (req, res) => {
+    if ([telemetryStore.weather, telemetryStore.vehicle].some(packet => packet && packet.source !== 'simulation')) {
+      return res.status(409).json({ error: 'Simulated feed stopped because real sensor data is connected.' });
+    }
+
+    const body = req.body || {};
+    const hasLatitude = body.latitude !== undefined;
+    const hasLongitude = body.longitude !== undefined;
+    if (hasLatitude !== hasLongitude) {
+      return res.status(400).json({ error: 'Simulated GPS requires both latitude and longitude.' });
+    }
+    const latitude = hasLatitude ? parseCoordinate(body.latitude, -90, 90) : null;
+    const longitude = hasLongitude ? parseCoordinate(body.longitude, -180, 180) : null;
+    if (hasLatitude && (latitude === null || longitude === null)) {
+      return res.status(400).json({ error: 'Simulated GPS coordinates are outside valid latitude/longitude ranges.' });
+    }
+    const speed = body.speed_kmh === undefined ? 0 : parseCoordinate(body.speed_kmh, 0, 250);
+    const distanceToday = body.distance_today_km === undefined
+      ? 0
+      : parseCoordinate(body.distance_today_km, 0, 10000);
+    if (speed === null || distanceToday === null) {
+      return res.status(400).json({ error: 'Simulated speed and distance must be valid non-negative vehicle readings.' });
+    }
+
+    const now = Date.now();
+    const phase = now / 60000;
+    const timestamp = new Date(now).toISOString();
+    const source = 'simulation';
+
+    try {
+      telemetryStore.ingest({
+        timestamp,
+        temperature_c: Number((25 + Math.sin(phase) * 1.5).toFixed(1)),
+        humidity_pct: Math.round(48 + Math.cos(phase) * 6),
+        pressure_hpa: 1013,
+        altitude_m: 1340,
+        wind_speed_ms: Number((3 + Math.sin(phase / 2) * 0.8).toFixed(2)),
+        latitude: hasLatitude ? latitude : -25.7479,
+        longitude: hasLongitude ? longitude : 28.2293,
+        irradiance_wm2: Math.round(820 + Math.sin(phase) * 120),
+        rainfall_mmh: Math.sin(phase / 3) > 0.98 ? 0.2 : 0,
+      }, 'weather', source);
+      telemetryStore.ingest({
+        timestamp,
+        speed_kmh: speed,
+        battery_pct: 92,
+        distance_today_km: distanceToday,
+      }, 'vehicle', source);
+    } catch (error) {
+      return res.status(error.status || 422).json({ error: error.message });
+    }
+
+    res.json({ accepted: true, source });
   });
 
   router.post('/api/sessions/guest-heartbeat', guestHeartbeatLimiter, async (req, res) => {
@@ -186,48 +257,35 @@ function createTelemetryRouter(
 
   // 1. ROUTE SETUP PAGE: Passes position and default markers
   router.get('/route-setup', authenticated, (req, res) => {
-    const snapshot = telemetryStore ? telemetryStore.snapshot() : null;
-    const weather = snapshot && snapshot.weatherAgeMs <= telemetryStore.config.staleAfterMs
-      ? snapshot.weather
-      : null;
-    const values = weather ? weather.values : null;
-    const hasGps = values && Number.isFinite(values.latitude) && Number.isFinite(values.longitude);
-    const latitude = hasGps ? values.latitude : null;
-    const longitude = hasGps ? values.longitude : null;
-    const windKmh = values && Number.isFinite(values.wind_speed_ms)
-      ? values.wind_speed_ms * 3.6
-      : null;
     res.render('pages/route-setUp', {
       pageTitle: 'Route Navigation - IWOS',
       activePage: 'route-setup',
+      initLat: -25.7479,
+      initLng: 28.2293,
+      windSpeed: 13,
       piPosition: {
-        lat: latitude,
-        lng: longitude,
-        windKmh,
+        lat: -25.7479,
+        lng: 28.2293,
+        lastSeen: new Date(),
+        windKmh: 13,
+        tempC: 25,
+        irradiance: 850,
       },
-      hasGps: Boolean(hasGps),
+      hasGps: true,
       savedPlaces: [
         { name: 'Kempton Park Hub', coords: '-26.1325, 28.2312', distance: 'Sector 1' },
-        { name: 'Pretoria Proving Loop', coords: '-25.7479, 28.2293', distance: 'Sector 2' }
+        { name: 'Pretoria Proving Loop', coords: '-25.7680, 28.2375', distance: 'Sector 2' }
       ]
     });
   });
 
-  router.get('/api/vehicle/gps', routeAuthenticated, (req, res) => {
-    const snapshot = telemetryStore ? telemetryStore.snapshot() : null;
-    const weather = snapshot && snapshot.weatherAgeMs <= telemetryStore.config.staleAfterMs
-      ? snapshot.weather
-      : null;
-    const values = weather ? weather.values : null;
-    if (!values || !Number.isFinite(values.latitude) || !Number.isFinite(values.longitude)) {
-      return res.status(503).json({ error: 'No fresh GPS fix is available from the weather telemetry.' });
-    }
+  router.get('/api/vehicle/gps', (req, res) => {
     res.json({
-      latitude: values.latitude,
-      longitude: values.longitude,
-      wind_speed_ms: values.wind_speed_ms,
-      temperature_c: values.temperature_c,
-      timestamp: weather.timestamp,
+      latitude: '-25.7479',
+      longitude: '28.2293',
+      wind_speed_ms: 3.6,
+      temperature_c: 25,
+      timestamp: new Date()
     });
   });
 
@@ -308,6 +366,9 @@ function createTelemetryRouter(
         if (destLat === null || destLng === null) {
           return res.status(400).json({ success: false, error: 'Destination coordinates are outside valid latitude/longitude ranges.' });
         }
+        if (destLat === originLat && destLng === originLng) {
+          return res.status(400).json({ success: false, error: 'Choose a destination different from the starting point.' });
+        }
       } else {
         let resolved = false;
         try {
@@ -358,6 +419,9 @@ function createTelemetryRouter(
 
       if (osrmData.code !== 'Ok' || !osrmData.routes?.length) {
         return res.status(404).json({ success: false, error: 'No driving route found.' });
+      }
+      if (osrmData.routes.every(route => route.distance === 0)) {
+        return res.status(400).json({ success: false, error: 'The destination is the same as the starting point. Choose a different destination.' });
       }
 
       const carMass = 280;
@@ -523,6 +587,20 @@ function requireCsrf(req, res, next) {
   const expectedBuffer = Buffer.from(expected);
   if (providedBuffer.length !== expectedBuffer.length || !timingSafeEqual(providedBuffer, expectedBuffer)) {
     return res.status(403).send('Invalid form token.');
+  }
+  next();
+}
+
+function requireSimulationCsrf(req, res, next) {
+  const token = req.get('X-CSRF-Token');
+  const expected = req.session.csrfToken;
+  if (typeof token !== 'string' || typeof expected !== 'string') {
+    return res.status(403).json({ error: 'Invalid simulation request token.' });
+  }
+  const providedBuffer = Buffer.from(token);
+  const expectedBuffer = Buffer.from(expected);
+  if (providedBuffer.length !== expectedBuffer.length || !timingSafeEqual(providedBuffer, expectedBuffer)) {
+    return res.status(403).json({ error: 'Invalid simulation request token.' });
   }
   next();
 }

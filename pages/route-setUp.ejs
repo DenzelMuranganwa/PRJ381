@@ -150,6 +150,7 @@
       let currentSelectedRoute = null;
       let debounceTimer = null;
       let suggestionRequestId = 0;
+      let routeCalculationInFlight = false;
 
       const input = document.getElementById('destinationInput');
       const clearBtn = document.getElementById('clearSearchBtn');
@@ -280,6 +281,7 @@
       });
 
       async function calculateRoute(destinationText, friendlyName) {
+        if (routeCalculationInFlight) return;
         if (!hasVehicleGps) {
           statusMsg.textContent = 'Route planning requires a fresh vehicle GPS fix.';
           return;
@@ -289,6 +291,7 @@
           return;
         }
 
+        routeCalculationInFlight = true;
         statusMsg.textContent = 'Calculating optimal solar track...';
         startBtn.disabled = true;
         startBtn.textContent = 'Evaluating Solar Balance...';
@@ -360,8 +363,10 @@
 
         } catch (err) {
           statusMsg.textContent = err.message || 'Route calculation failed.';
-          startBtn.disabled = false;
           startBtn.textContent = 'Calculate Best Solar Route';
+        } finally {
+          routeCalculationInFlight = false;
+          startBtn.disabled = false;
         }
       }
 

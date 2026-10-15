@@ -217,6 +217,42 @@ session; it does not delete guest records belonging to other visitors.
    npm test
    ```
 
+## Dashboard simulator scripts
+
+The scripts in `scripts/` send simulated weather and vehicle readings to the
+local dashboard. They use `SENSOR_API_TOKEN` and `PORT` from the project `.env`
+and default to `http://127.0.0.1:<PORT>`. The server must be running with
+`SENSOR_SOURCE=http`; MQTT mode intentionally rejects HTTP weather packets.
+
+Run one simulator at a time in a second terminal, after starting the server:
+
+```powershell
+node .\scripts\KP-Simultion.js
+```
+
+Alternatively, run `FNB_Stadium.js` or `simulate-motion.js`. Each script
+continues to send route points until stopped with Ctrl+C. Add `--once` to send
+one point and exit. Open `/dashboard`; accepted data updates the display
+automatically. If the server uses a non-default URL, set `SENSOR_API_URL`, for
+example `http://127.0.0.1:3100`.
+
+For a quick browser-based simulation, open `/dashboard` in a non-production
+environment. The simulated feed starts automatically and sends synthetic readings
+through the same telemetry store and optimizer as the sensor integration, so
+the live cards and analysis update together. If a navigation trip is active,
+choose **Begin Simulation** on the dashboard to move the simulated GPS along
+that route; the map and navigation guidance update with it. The telemetry feed
+continues whether or not a route is selected or simulated. Route selection is
+optional and remains under the driver's control. Updates continue while the
+dashboard is open; closing or leaving the dashboard ends that browser's simulated feed
+feed. During route playback, vehicle speed accelerates from zero and varies
+along the route; **Log Today** adds the distance actually traveled. Without a
+running route simulation, simulated speed and distance remain zero. The simulation is
+disabled in production;
+set `ENABLE_TELEMETRY_SIMULATION=false` to disable it in other environments. It will
+not overwrite readings from a real sensor feed. The optimizer is a prototype
+rule-based system, not a trained or autonomous AI model.
+
 ## Account, route, and security notes
 
 - `/` redirects to the public `/dashboard`.

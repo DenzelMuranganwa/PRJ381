@@ -1,10 +1,11 @@
 'use strict';
 
+const { runSimulator, sendTelemetry } = require('./telemetry-client');
+
 /**
  * Solar Car Driveway Simulator
- * Pushes moving GPS coordinates + realistic solar telemetry readings
+ * Pushes moving GPS coordinates and simulated weather/vehicle readings.
  */
-
 const mockDriveway = [
   { lat: -25.7479, lng: 28.2293, speed: 0, wind: 12, irr: 840, temp: 26.2 },
   { lat: -25.7501, lng: 28.2305, speed: 25, wind: 13, irr: 848, temp: 26.4 },
@@ -19,48 +20,34 @@ const mockDriveway = [
 ];
 
 let idx = 0;
-const SERVER_URL = 'http://localhost:3000/api/sensor-data'; // Adjust if using token or MQTT
-const SENSOR_TOKEN = process.env.SENSOR_API_TOKEN || '';
 
 async function sendTelemetryPulse() {
   const current = mockDriveway[idx];
-  const payload = {
-    latitude: current.lat.toString(),
-    longitude: current.lng.toString(),
-    speed: current.speed,
-    irradiance: current.irr,
-    temperature: current.temp,
-    wind: current.wind,
-    rainfall: 0,
-    humidity: 42,
-    pressure: 1014,
-    altitude: 1340,
-    timestamp: new Date().toISOString()
+  const timestamp = new Date().toISOString();
+  const weatherPayload = {
+    timestamp,
+    latitude: current.lat,
+    longitude: current.lng,
+    temperature_c: current.temp,
+    humidity_pct: 42,
+    pressure_hpa: 1014,
+    altitude_m: 1340,
+    wind_speed_ms: current.wind / 3.6,
+    irradiance_wm2: current.irr,
+    rainfall_mmh: 0,
+  };
+  const vehiclePayload = {
+    timestamp,
+    speed_kmh: current.speed,
+    battery_pct: Math.max(0, 100 - idx * 0.3),
+    distance_today_km: idx * 0.8,
   };
 
-  console.log(`[SIMULATOR] Step ${idx + 1}/${mockDriveway.length}: Pos [${payload.latitude}, ${payload.longitude}] - Speed ${payload.speed} km/h`);
-
-  try {
-    const res = await fetch(SERVER_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(SENSOR_TOKEN ? { 'Authorization': `Bearer ${SENSOR_TOKEN}` } : {})
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      console.warn(`Server responded with ${res.status}`);
-    }
-  } catch (err) {
-    console.log(`(Pulse sent locally - ${err.message})`);
-  }
-
-  idx = (idx + 1) % mockDriveway.length; // Loops continuously
+  console.log(`[SIMULATOR] Step ${idx + 1}/${mockDriveway.length}: Position [${current.lat}, ${current.lng}] - Speed ${current.speed} km/h`);
+  await sendTelemetry(weatherPayload, vehiclePayload);
+  idx = (idx + 1) % mockDriveway.length;
 }
 
-console.log(' Solar Vehicle Movement Simulation running...');
-console.log('Emitting vehicle positions every 3 seconds...');
-setInterval(sendTelemetryPulse, 3000);
-sendTelemetryPulse();
+console.log('Solar vehicle movement simulation sending data to the dashboard.');
+console.log('Use --once to send one position and exit.');
+runSimulator(sendTelemetryPulse, 3000);
