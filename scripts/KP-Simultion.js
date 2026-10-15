@@ -95,6 +95,8 @@ async function sendTelemetryTick() {
   currentIndex = (currentIndex + 1) % highResKemptonTrack.length;
 }
 
-console.log('Sending simulated Kempton Park route data to the dashboard.');
-console.log('Use --once to send one waypoint and exit.');
-runSimulator(sendTelemetryTick, 2500);
+console.log(`Connecting to: ${RENDER_BASE_URL}`);
+console.log(`Transmitting live stream every 2.5s (fresh heartbeat)...`);
+
+sendTelemetryTick();
+setInterval(sendTelemetryTick, 2500);

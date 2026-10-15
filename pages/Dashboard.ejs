@@ -245,7 +245,12 @@
                   <span><%= card.label %></span>
                 </div>
 
-                <% if (card.icon === 'thermometer') { %>
+                <% if (card.icon === 'sun') { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                  </svg>
+                <% } else if (card.icon === 'thermometer') { %>
                   <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
                   </svg>
@@ -732,7 +737,57 @@
         }
       }
 
-      // GPS readings update the vehicle marker and active navigation.
+      // 9. Built-in Simulation Driver
+      const simBtn = document.getElementById('simulateDriveBtn');
+      let simInterval = null;
+
+      simBtn.addEventListener('click', () => {
+        if (simInterval) {
+          clearInterval(simInterval);
+          simInterval = null;
+          simBtn.textContent = '▶ Resume Drive';
+          return;
+        }
+
+        const trackToDrive = (navData && navData.coordinates && navData.coordinates.length > 1) 
+          ? navData.coordinates 
+          : [[-25.7479, 28.2293], [-25.7510, 28.2310], [-25.7540, 28.2330], [-25.7580, 28.2350], [-25.7680, 28.2375]];
+
+        let idx = 0;
+        let cumulativeKm = 0;
+        simBtn.textContent = '⏸ Pause Drive';
+
+        const gpsEl = document.querySelector('[data-value="gps"]');
+        const speedEl = document.querySelector('[data-value="speed"]');
+        const distEl = document.querySelector('[data-value="distance"]');
+
+        simInterval = setInterval(() => {
+          if (idx >= trackToDrive.length) {
+            clearInterval(simInterval);
+            simInterval = null;
+            simBtn.textContent = '↺ Restart Drive';
+            if (speedEl) speedEl.textContent = '0';
+            return;
+          }
+
+          const currentPos = trackToDrive[idx];
+          carMarker.setLatLng(currentPos);
+
+          if (gpsEl) gpsEl.textContent = `${currentPos[0].toFixed(5)}, ${currentPos[1].toFixed(5)}`;
+          if (idx > 0) {
+            cumulativeKm += haversineMeters(trackToDrive[idx - 1], currentPos) / 1000;
+          }
+          if (distEl) distEl.textContent = cumulativeKm.toFixed(1);
+          if (speedEl) speedEl.textContent = (idx === trackToDrive.length - 1) ? '0' : Math.round(52 + (Math.random() * 6));
+
+          // Run real-time navigation calculations
+          updateNavigationGuidance(currentPos);
+
+          idx++;
+        }, 900);
+      });
+
+      // 10. GPS Mutation Observer for external sensor data
       const gpsObserver = new MutationObserver(() => {
         const gpsEl = document.querySelector('[data-value="gps"]');
         if (!gpsEl) return;
@@ -758,4 +813,4 @@
     });
   </script>
 </body>
-</html>
+</html>   but this into the dashboard.ejs and see if this works
