@@ -1,11 +1,7 @@
+﻿
+'use strict';
 
-const https = require('node:https');
-
-
-const RENDER_BASE_URL = 'https://prj381-1-yv13.onrender.com';
-
-
-const SENSOR_TOKEN = process.env.SENSOR_API_TOKEN || 'iwos-secret-token-2026';
+const { runSimulator, sendTelemetry } = require('./telemetry-client');
 
 
 const ROUTE_POINTS = [
@@ -22,38 +18,7 @@ function computePressure(alt) {
   return parseFloat((1013.25 * Math.pow(1 - (0.0065 * alt) / 288.15, 5.255)).toFixed(1));
 }
 
-function sendPost(path, data) {
-  const payload = JSON.stringify(data);
-  const target = new URL(RENDER_BASE_URL + path);
-
-  const req = https.request({
-    hostname: target.hostname,
-    port: 443,
-    path: target.pathname,
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(payload),
-      'Authorization': `Bearer ${SENSOR_TOKEN}`
-    }
-  }, res => {
-    let raw = '';
-    res.on('data', chunk => raw += chunk);
-    res.on('end', () => {
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        console.log(`[HTTP ${res.statusCode}] Success -> ${path}`);
-      } else {
-        console.error(`[HTTP ${res.statusCode}] Failed -> ${path}: ${raw}`);
-      }
-    });
-  });
-
-  req.on('error', err => console.error(`Network error: ${err.message}`));
-  req.write(payload);
-  req.end();
-}
-
-function sendTelemetryTick() {
+async function sendTelemetryTick() {
   const p = ROUTE_POINTS[index];
   const pressure = computePressure(p.alt);
 
@@ -81,14 +46,13 @@ function sendTelemetryTick() {
 
   console.log(`\n========================================================`);
   console.log(`Point: ${p.name}`);
-  console.log(`Speed: ${p.speedKmh} km/h | Battery: ${p.battery}% | Irradiance: ${p.irradiance} W/m² | Temp: ${p.tempC} °C`);
+  console.log(`Speed: ${p.speedKmh} km/h | Battery: ${p.battery}% | Irradiance: ${p.irradiance} W/m^2 | Temp: ${p.tempC} C`);
 
-  sendPost('/api/telemetry/weather', weatherPayload);
-  sendPost('/api/telemetry/vehicle', vehiclePayload);
+  await sendTelemetry(weatherPayload, vehiclePayload);
 
   index = (index + 1) % ROUTE_POINTS.length;
 }
 
-console.log(`Connecting to: ${RENDER_BASE_URL}`);
-sendTelemetryTick();
-setInterval(sendTelemetryTick, 5000);
+console.log('Sending simulated FNB Stadium route data to the dashboard.');
+console.log('Use --once to send one waypoint and exit.');
+runSimulator(sendTelemetryTick, 5000);

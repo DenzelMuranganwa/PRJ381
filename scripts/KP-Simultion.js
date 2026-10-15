@@ -1,9 +1,7 @@
-'use strict';
+﻿'use strict';
 
-const https = require('node:https');
+const { runSimulator, sendTelemetry } = require('./telemetry-client');
 
-const RENDER_BASE_URL = 'https://prj381-1-yv13.onrender.com';
-const SENSOR_TOKEN = process.env.SENSOR_API_TOKEN || 'iwos-secret-token-2026';
 
 const highResKemptonTrack = [
   { step: 1, lat: -25.6818343, lng: 28.1301449, speed: 0, temp: 24.1, windKmh: 10, soc: 98.0, stop: false, road: "Departure Point (Pretoria North)", dist: 0.0, baseAlt: 1320, humidityBase: 52 },
@@ -50,41 +48,7 @@ function computeBarometricPressure(altMeters) {
   return parseFloat((1013.25 * Math.pow(1 - (0.0065 * altMeters) / 288.15, 5.255)).toFixed(1));
 }
 
-function sendPost(path, data) {
-  const payload = JSON.stringify(data);
-  const target = new URL(RENDER_BASE_URL + path);
-
-  const req = https.request(
-    {
-      hostname: target.hostname,
-      port: 443,
-      path: target.pathname,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload),
-        'Authorization': `Bearer ${SENSOR_TOKEN}`
-      }
-    },
-    res => {
-      let raw = '';
-      res.on('data', chunk => (raw += chunk));
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log(`[HTTP ${res.statusCode}] Success -> ${path}`);
-        } else {
-          console.error(`[HTTP ${res.statusCode}] Failed -> ${path}: ${raw}`);
-        }
-      });
-    }
-  );
-
-  req.on('error', err => console.error(`Network error: ${err.message}`));
-  req.write(payload);
-  req.end();
-}
-
-function sendTelemetryTick() {
+async function sendTelemetryTick() {
   const p = highResKemptonTrack[currentIndex];
   const nowIso = new Date().toISOString();
 
@@ -106,7 +70,9 @@ function sendTelemetryTick() {
     altitude_m: currentAltitude,
     wind_speed_ms: currentWindMs,
     latitude: p.lat,
-    longitude: p.lng
+    longitude: p.lng,
+    irradiance_wm2: 820,
+    rainfall_mmh: 0
   };
 
   const vehiclePayload = {
@@ -124,14 +90,11 @@ function sendTelemetryTick() {
   console.log(`Speed: ${currentSpeed} km/h | SoC: ${p.soc}% | Distance: ${p.dist} km`);
   console.log(`Temp: ${currentTemp} C | Wind: ${currentWindMs} m/s | Pressure: ${currentPressure} hPa`);
 
-  sendPost('/api/telemetry/weather', weatherPayload);
-  sendPost('/api/telemetry/vehicle', vehiclePayload);
+  await sendTelemetry(weatherPayload, vehiclePayload);
 
   currentIndex = (currentIndex + 1) % highResKemptonTrack.length;
 }
 
-console.log(`Connecting to: ${RENDER_BASE_URL}`);
-console.log(`Transmitting live stream every 2.5s (fresh heartbeat)...`);
-
-sendTelemetryTick();
-setInterval(sendTelemetryTick, 2500);
+console.log('Sending simulated Kempton Park route data to the dashboard.');
+console.log('Use --once to send one waypoint and exit.');
+runSimulator(sendTelemetryTick, 2500);
