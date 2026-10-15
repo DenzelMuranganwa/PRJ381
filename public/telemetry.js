@@ -3,6 +3,17 @@
   const text = (selector, value) => document.querySelectorAll(selector).forEach(node => { node.textContent = value; });
   const format = (value, digits = 1) => Number.isFinite(value) ? value.toFixed(digits) : '—';
   const names = { temperature:'air temperature', humidity:'humidity', wind:'wind speed', irradiance:'irradiance', rain:'rainfall', battery:'battery level', speed:'vehicle speed' };
+  let simulationFeedTimer = null;
+  let simulationRequestInFlight = false;
+  let simulationState = 'idle';
+  let lastSimulationPosition = null;
+  let simulationRoute = null;
+  let routeDistances = [];
+  let routeProgressMeters = 0;
+  let routeLengthMeters = 0;
+  let simulatedSpeedKmh = 0;
+  let distanceTodayKm = 0;
+  let lastSimulationTick = null;
 
   if (document.body.dataset.authenticated !== 'true') {
     const sendGuestHeartbeat = async () => {
@@ -67,7 +78,8 @@
     const w = data.weather?.values || {}, v = data.vehicleFresh ? data.vehicle.values : {}, ai = data.analysis;
     document.body.dataset.feed = data.state;
     text('[data-feed-state]', {waiting:'Waiting for sensor',live:'Live sensor data',stale:'Stale sensor data'}[data.state]);
-    text('[data-feed-detail]', data.transport.message || `${data.weather?.source?.toUpperCase() || 'Sensor'} · ${data.transport.state}${data.weather?.timezoneAssumed ? ' · sensor timezone from configuration' : ''}`);
+    const feedSource = data.weather?.source === 'simulation' ? 'SIMULATED FEED' : data.weather?.source?.toUpperCase() || 'Sensor';
+    text('[data-feed-detail]', data.transport.message || `${feedSource} · ${data.transport.state}${data.weather?.timezoneAssumed ? ' · sensor timezone from configuration' : ''}`);
     text('[data-transport]', `Feed: ${data.transport.state}`);
     text('[data-age]', data.weatherAgeMs == null ? 'No reading yet' : `Measured ${Math.floor(data.weatherAgeMs/1000)}s ago`);
     text('[data-battery]', v.battery_pct == null ? '—' : `${format(v.battery_pct,0)}%`);
@@ -83,10 +95,21 @@
     for (const key of ['temperature','wind','humidity','pressure']) {
       const value = values[key];
       text(`[data-note="${key}"]`,value == null ? (data.weather ? 'No sensor measurement' : 'Waiting for measurement') :
-        data.state === 'live' ? 'Measured by sensor' : 'Last reading · stale');
+        data.weather?.source === 'simulation' ? 'Simulated reading' :
+          data.state === 'live' ? 'Measured by sensor' : 'Last reading · stale');
     }
     text('[data-value="timestamp"]',data.weather ? new Date(data.weather.timestamp).toLocaleString() : '—');
-    text('[data-value="gps"]',w.latitude == null || w.longitude == null ? 'No GPS fix available' : `${Math.abs(w.latitude).toFixed(5)}° ${w.latitude<0?'S':'N'}, ${Math.abs(w.longitude).toFixed(5)}° ${w.longitude<0?'W':'E'}`);
+    for (const gps of document.querySelectorAll('[data-value="gps"]')) {
+      if (w.latitude == null || w.longitude == null) {
+        gps.textContent = 'No GPS fix available';
+        delete gps.dataset.latitude;
+        delete gps.dataset.longitude;
+      } else {
+        gps.dataset.latitude = String(w.latitude);
+        gps.dataset.longitude = String(w.longitude);
+        gps.textContent = `${Math.abs(w.latitude).toFixed(5)}° ${w.latitude<0?'S':'N'}, ${Math.abs(w.longitude).toFixed(5)}° ${w.longitude<0?'W':'E'}`;
+      }
+    }
     for (const key of ['recommendation','reason','batteryMode','energyStatus']) text(`[data-ai="${key}"]`, ai[key] ?? 'Unavailable');
     text('[data-ai="performance"]',ai.performance ?? 'Waiting for complete measured inputs and history');
     text('[data-ai="status"]',{waiting:'Waiting',partial:'Partial inputs',ready:'All inputs available',stale:'Paused · stale'}[ai.status]);
@@ -120,5 +143,196 @@
       text('[data-note]','Last reading · connection lost');
     } finally { window.setTimeout(poll,2000); }
   }
+
+  if (document.body.dataset.simulationEnabled === 'true') {
+    const simulationStatus = document.getElementById('simulation-feed-status');
+    const simulationButton = document.getElementById('beginSimulationBtn');
+    const distanceMeters = (first, second) => {
+      const radians = degrees => degrees * Math.PI / 180;
+      const latDifference = radians(second[0] - first[0]);
+      const lonDifference = radians(second[1] - first[1]);
+      const a = Math.sin(latDifference / 2) ** 2
+        + Math.cos(radians(first[0])) * Math.cos(radians(second[0]))
+          * Math.sin(lonDifference / 2) ** 2;
+      return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+    const readActiveTrip = () => {
+      const savedTrip = localStorage.getItem('activeSolarNavigation');
+      if (!savedTrip) return null;
+      const trip = JSON.parse(savedTrip);
+      if (!trip.isActive || !Array.isArray(trip.coordinates) || trip.coordinates.length < 2) return null;
+      return trip;
+    };
+    const setSimulatedPosition = position => {
+      lastSimulationPosition = { latitude: position[0], longitude: position[1] };
+      for (const gps of document.querySelectorAll('[data-value="gps"]')) {
+        gps.dataset.latitude = String(position[0]);
+        gps.dataset.longitude = String(position[1]);
+        gps.textContent = `${position[0].toFixed(5)}, ${position[1].toFixed(5)}`;
+      }
+      text('[data-value="speed"]', format(simulatedSpeedKmh, 0));
+      text('[data-value="distance"]', distanceTodayKm.toFixed(2));
+    };
+    const positionAtDistance = progress => {
+      let segment = 1;
+      while (segment < routeDistances.length - 1 && routeDistances[segment] < progress) segment++;
+      const startDistance = routeDistances[segment - 1];
+      const segmentLength = routeDistances[segment] - startDistance;
+      const ratio = segmentLength > 0 ? (progress - startDistance) / segmentLength : 0;
+      const start = simulationRoute[segment - 1];
+      const end = simulationRoute[segment];
+      return [
+        start[0] + (end[0] - start[0]) * ratio,
+        start[1] + (end[1] - start[1]) * ratio,
+      ];
+    };
+    const advanceSimulation = () => {
+      if (simulationState !== 'running' || !simulationRoute) return;
+      const now = performance.now();
+      if (lastSimulationTick === null) {
+        lastSimulationTick = now;
+        return;
+      }
+      const elapsedSeconds = Math.min((now - lastSimulationTick) / 1000, 1.5);
+      lastSimulationTick = now;
+      const targetSpeed = Math.min(54, 42 + 8 * Math.sin(routeProgressMeters / 300));
+      const speedChange = targetSpeed > simulatedSpeedKmh ? 8 : 14;
+      const previousSpeed = simulatedSpeedKmh;
+      simulatedSpeedKmh += Math.sign(targetSpeed - simulatedSpeedKmh)
+        * Math.min(Math.abs(targetSpeed - simulatedSpeedKmh), speedChange * elapsedSeconds);
+      const travelledMeters = ((previousSpeed + simulatedSpeedKmh) / 2) / 3.6 * elapsedSeconds;
+      routeProgressMeters = Math.min(routeLengthMeters, routeProgressMeters + travelledMeters);
+      distanceTodayKm = routeProgressMeters / 1000;
+      setSimulatedPosition(positionAtDistance(routeProgressMeters));
+      if (routeProgressMeters >= routeLengthMeters) {
+        simulatedSpeedKmh = 0;
+        simulationState = 'complete';
+        setSimulatedPosition(simulationRoute[simulationRoute.length - 1]);
+        simulationStatus.textContent = 'Route simulation complete · telemetry feed continues.';
+      }
+      renderSimulationButton();
+    };
+    const renderSimulationButton = () => {
+      if (!simulationButton) return;
+      const trip = readActiveTrip();
+      simulationButton.disabled = !trip;
+      if (!trip) {
+        document.body.dataset.routeSimulation = 'idle';
+        simulationButton.textContent = 'Begin Simulation';
+        simulationButton.title = 'Choose and start a route first.';
+      } else {
+        simulationButton.title = '';
+        document.body.dataset.routeSimulation = simulationState;
+        simulationButton.textContent = {
+          idle: 'Begin Simulation',
+          running: 'Pause Simulation',
+          paused: 'Resume Simulation',
+          complete: 'Replay Simulation',
+        }[simulationState];
+      }
+    };
+    simulationButton?.addEventListener('click', () => {
+      const trip = readActiveTrip();
+      if (!trip) {
+        renderSimulationButton();
+        return;
+      }
+      if (simulationState === 'running') {
+        simulationState = 'paused';
+        simulatedSpeedKmh = 0;
+        lastSimulationTick = null;
+        text('[data-value="speed"]', '0');
+      } else {
+        if (simulationState === 'idle' || simulationState === 'complete') {
+          simulationRoute = trip.coordinates;
+          routeDistances = [0];
+          for (let index = 1; index < simulationRoute.length; index++) {
+            const start = simulationRoute[index - 1];
+            const end = simulationRoute[index];
+            if (!Array.isArray(start) || !Array.isArray(end)
+              || start.length !== 2 || end.length !== 2
+              || !start.every(Number.isFinite) || !end.every(Number.isFinite)
+              || Math.abs(start[0]) > 90 || Math.abs(start[1]) > 180
+              || Math.abs(end[0]) > 90 || Math.abs(end[1]) > 180) {
+              simulationStatus.textContent = 'Saved route has invalid coordinates; simulation cannot start.';
+              return;
+            }
+            routeDistances.push(routeDistances[index - 1] + distanceMeters(start, end));
+          }
+          routeLengthMeters = routeDistances[routeDistances.length - 1];
+          if (routeLengthMeters <= 0) {
+            simulationStatus.textContent = 'Saved route has no measurable distance; simulation cannot start.';
+            return;
+          }
+          routeProgressMeters = 0;
+          distanceTodayKm = 0;
+          simulatedSpeedKmh = 0;
+          setSimulatedPosition(simulationRoute[0]);
+        }
+        simulationState = 'running';
+        lastSimulationTick = performance.now();
+      }
+      renderSimulationButton();
+    });
+    renderSimulationButton();
+    const nextSimulationPosition = () => {
+      const trip = readActiveTrip();
+      if (trip && simulationState === 'idle') {
+        const start = trip.coordinates[0];
+        if (!Array.isArray(start) || start.length !== 2 || !start.every(Number.isFinite)) {
+          throw new Error('Saved navigation route has invalid coordinates; simulated feed stopped.');
+        }
+        lastSimulationPosition = { latitude: start[0], longitude: start[1] };
+      }
+      if (!lastSimulationPosition) return null;
+      return {
+        ...lastSimulationPosition,
+        speed_kmh: simulationState === 'running' ? simulatedSpeedKmh : 0,
+        distance_today_km: distanceTodayKm,
+      };
+    };
+    const sendSimulationReading = async () => {
+      if (simulationRequestInFlight) return;
+      simulationRequestInFlight = true;
+      let response;
+      try {
+        const position = nextSimulationPosition();
+        response = await fetch('/api/simulation/telemetry', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.body.dataset.csrfToken,
+          },
+          body: JSON.stringify(position || {}),
+          signal: AbortSignal.timeout(5000),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          const error = new Error(result.error || `Simulated feed failed with HTTP ${response.status}.`);
+          error.status = response.status;
+          throw error;
+        }
+        simulationStatus.textContent = 'Automatic simulated feed active · updating every 5 seconds.';
+      } catch (error) {
+        if ([400, 403, 404, 409, 422].includes(error.status)) {
+          window.clearInterval(simulationFeedTimer);
+          simulationFeedTimer = null;
+          simulationStatus.textContent = `${error.message} Automatic simulated updates stopped.`;
+        } else {
+          simulationStatus.textContent = `${error.message || 'Simulated feed could not send a reading.'} Retrying automatically.`;
+        }
+      } finally {
+        simulationRequestInFlight = false;
+      }
+    };
+    const startSimulationFeed = () => {
+      void sendSimulationReading();
+      simulationFeedTimer = window.setInterval(sendSimulationReading, 5000);
+    };
+    window.setInterval(advanceSimulation, 1000);
+    startSimulationFeed();
+  }
+
   poll();
 })();

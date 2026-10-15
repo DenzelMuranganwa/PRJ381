@@ -213,7 +213,7 @@
     }
   </style>
 </head>
-<body data-theme="<%= typeof themePreference !== 'undefined' ? themePreference : 'dark' %>" data-authenticated="<%= currentUser ? 'true' : 'false' %>">
+<body data-theme="<%= typeof themePreference !== 'undefined' ? themePreference : 'dark' %>" data-authenticated="<%= currentUser ? 'true' : 'false' %>" data-simulation-enabled="<%= typeof simulationEnabled !== 'undefined' && simulationEnabled ? 'true' : 'false' %>" data-csrf-token="<%= csrfToken %>">
 
   <%- include('../partials/header', { activePage: 'dashboard' }) %>
 
@@ -225,14 +225,15 @@
         <h3 class="section-title">TELEMETRY FEED</h3>
 
         <% const feeds = [
-          {key:'irradiance', label:'Irradiance', unit:'W/m²', color:'val-amber', icon:'sun'},
           {key:'temperature', label:'Atmos', unit:'°C', color:'val-blue', icon:'thermometer'},
-          {key:'wind', label:'Wind', unit:'km/h', color:'val-cyan', icon:'wind'},
-          {key:'rainfall', label:'Rainfall', unit:'mm/h', color:'val-red', icon:'droplet'}
+          {key:'wind', label:'Wind', unit:'km/h', color:'val-cyan', icon:'wind'}
         ]; %>
         <div class="sensor-status-row" role="status" aria-live="polite">
           <span class="sensor-pill" data-feed-state>Waiting</span>
           <span data-feed-detail>Connecting to dashboard…</span>
+          <% if (typeof simulationEnabled !== 'undefined' && simulationEnabled) { %>
+            <span id="simulation-feed-status" class="sensor-note" aria-live="polite">Starting automatic simulated feed…</span>
+          <% } %>
         </div>
         <noscript>Enable JavaScript to receive live sensor updates.</noscript>
         <div class="telemetry-cards-row">
@@ -268,8 +269,8 @@
           <% }) %>
         </div>
         <div class="sensor-secondary">
-          <span>Solar irradiance <strong data-value="irradiance">Not measured</strong> W/m²</span>
-          <span>Rainfall <strong data-value="rainfall">Not measured</strong> mm/h</span>
+          <span>Humidity <strong data-value="humidity">—</strong> %</span>
+          <span>Pressure <strong data-value="pressure">—</strong> hPa</span>
           <span>Altitude <strong data-value="altitude">—</strong> m (barometric)</span>
           <span>Measured <strong data-value="timestamp">—</strong></span>
         </div>
@@ -310,9 +311,11 @@
               <a href="/route-setup" class="mobile-btn" style="display: inline-block; text-align: center; text-decoration: none; padding: 8px 16px; font-size: 0.8rem; background: #7075f8; color: #fff; border-radius: 8px; font-weight: 600;">
                 Set / Change Route
               </a>
-              <button type="button" id="simulateDriveBtn" class="mobile-btn" style="padding: 8px 16px; font-size: 0.8rem; background: #00e599; color: #0b111a; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;">
-                ▶ Simulate Car Drive
-              </button>
+              <% if (typeof simulationEnabled !== 'undefined' && simulationEnabled) { %>
+                <button type="button" id="beginSimulationBtn" class="mobile-btn" disabled>
+                  Begin Simulation
+                </button>
+              <% } %>
             </div>
           </div>
 
@@ -341,8 +344,8 @@
       const mapContainer = document.getElementById('dashboard-map');
       if (!mapContainer) return;
 
-      const fallbackLat = -25.6818343;
-      const fallbackLng = 28.1301449;
+      const fallbackLat = -25.7479;
+      const fallbackLng = 28.2293;
 
       // 1. Initialize Leaflet Map
       const map = L.map('dashboard-map', { zoomControl: false }).setView([fallbackLat, fallbackLng], 14);
@@ -417,7 +420,7 @@
         const dLat = (c2[0] - c1[0]) * Math.PI / 180;
         const dLon = (c2[1] - c1[1]) * Math.PI / 180;
         const a = Math.sin(dLat/2)**2 + Math.cos(c1[0]*Math.PI/180) * Math.cos(c2[0]*Math.PI/180) * Math.sin(dLon/2)**2;
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
       }
 
       function distanceToSegment(p, a, b) {
@@ -459,6 +462,7 @@
       let activePolyline = null;
       let activeDestMarker = null;
       let isRerouting = false;
+      let nextRerouteAt = 0;
       let topHud = null;
       let bottomHud = null;
 
@@ -583,7 +587,7 @@
 
       initHud();
 
-      // 7. Real-Time Navigation Guidance
+      // 7. Bulletproof Real-Time Navigation Guidance
       function updateNavigationGuidance(rawPos) {
         if (!navData || !navData.isActive || !topHud || isRerouting) return;
         const currentPos = parseToLatLng(rawPos);
@@ -602,7 +606,12 @@
 
         const offRouteDist = minDistanceToPolyline(currentPos, coords);
         if (offRouteDist > 50) {
-          triggerRealtimeReroute(currentPos);
+          if (Date.now() >= nextRerouteAt) {
+            triggerRealtimeReroute(currentPos);
+          } else {
+            const seconds = Math.ceil((nextRerouteAt - Date.now()) / 1000);
+            topHud.querySelector('.nav-maneuver-sub').textContent = `Off route · retrying in ${seconds}s`;
+          }
           return;
         }
 
@@ -674,6 +683,7 @@
       async function triggerRealtimeReroute(currentPos) {
         if (isRerouting) return;
         isRerouting = true;
+        nextRerouteAt = Date.now() + 30000;
 
         topHud.classList.add('rerouting');
         topHud.querySelector('.nav-maneuver-icon').innerHTML = `<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><polyline points="21 3 21 9 15 9"/></svg>`;
@@ -722,73 +732,28 @@
         }
       }
 
-      // 9. Built-in Simulation Driver
-      const simBtn = document.getElementById('simulateDriveBtn');
-      let simInterval = null;
-
-      simBtn.addEventListener('click', () => {
-        if (simInterval) {
-          clearInterval(simInterval);
-          simInterval = null;
-          simBtn.textContent = '▶ Resume Drive';
-          return;
-        }
-
-        const trackToDrive = (navData && navData.coordinates && navData.coordinates.length > 1) 
-          ? navData.coordinates 
-          : [[-25.6818343, 28.1301449], [-25.71420, 28.17850], [-25.74790, 28.22930], [-25.76850, 28.21390], [-25.77240, 28.21180]];
-
-        let idx = 0;
-        let cumulativeKm = 0;
-        simBtn.textContent = '⏸ Pause Drive';
-
-        const gpsEl = document.querySelector('[data-value="gps"]');
-        const speedEl = document.querySelector('[data-value="speed"]');
-        const distEl = document.querySelector('[data-value="distance"]');
-
-        simInterval = setInterval(() => {
-          if (idx >= trackToDrive.length) {
-            clearInterval(simInterval);
-            simInterval = null;
-            simBtn.textContent = '↺ Restart Drive';
-            if (speedEl) speedEl.textContent = '0';
-            return;
-          }
-
-          const currentPos = trackToDrive[idx];
-          carMarker.setLatLng(currentPos);
-
-          if (gpsEl) gpsEl.textContent = `${currentPos[0].toFixed(5)}, ${currentPos[1].toFixed(5)}`;
-          if (idx > 0) {
-            cumulativeKm += haversineMeters(trackToDrive[idx - 1], currentPos) / 1000;
-          }
-          if (distEl) distEl.textContent = cumulativeKm.toFixed(1);
-          if (speedEl) speedEl.textContent = (idx === trackToDrive.length - 1) ? '0' : Math.round(52 + (Math.random() * 6));
-
-          updateNavigationGuidance(currentPos);
-
-          idx++;
-        }, 900);
-      });
-
-      // 10. GPS Mutation Observer for external sensor data
+      // GPS readings update the vehicle marker and active navigation.
       const gpsObserver = new MutationObserver(() => {
         const gpsEl = document.querySelector('[data-value="gps"]');
         if (!gpsEl) return;
-        const text = gpsEl.textContent.trim();
-        const coords = text.match(/^([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)$/);
-        if (coords) {
-          const lat = parseFloat(coords[1]);
-          const lng = parseFloat(coords[2]);
+        const lat = Number(gpsEl.dataset.latitude);
+        const lng = Number(gpsEl.dataset.longitude);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
           const pos = parseToLatLng([lat, lng]);
           carMarker.setLatLng(pos);
-          updateNavigationGuidance(pos);
+          if (navData && navData.isActive && document.body.dataset.routeSimulation !== 'idle') {
+            map.panTo(pos, { animate: false });
+            updateNavigationGuidance(pos);
+          }
         }
       });
 
       const gpsElement = document.querySelector('[data-value="gps"]');
       if (gpsElement) {
-        gpsObserver.observe(gpsElement, { childList: true, characterData: true, subtree: true });
+        gpsObserver.observe(gpsElement, {
+          attributes: true,
+          attributeFilter: ['data-latitude', 'data-longitude'],
+        });
       }
     });
   </script>
