@@ -97,6 +97,7 @@ function createApp(config, store, userStore = new UserStore(), {
     path.join(config.root, 'public'),
     syncSessionsCollection,
     store,
+    config,
   ));
 
   app.use((error, req, res, next) => {
