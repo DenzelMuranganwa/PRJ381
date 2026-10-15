@@ -46,6 +46,15 @@ test('account registration, login, protected pages, profile preferences, and log
   assert.match(guestHtml, /TELEMETRY FEED/);
   assert.equal((await request('/', { redirect: 'manual' })).headers.get('location'), '/dashboard');
 
+  const gpsResponse = await request('/api/vehicle/gps');
+  assert.equal(gpsResponse.status, 200);
+  const gps = await gpsResponse.json();
+  assert.equal(gps.latitude, '-25.7479');
+  assert.equal(gps.longitude, '28.2293');
+  assert.equal(gps.wind_speed_ms, 3.6);
+  assert.equal(gps.temperature_c, 25);
+  assert.ok(Number.isFinite(Date.parse(gps.timestamp)));
+
   for (const route of ['/sync-sessions', '/route-setup', '/settings']) {
     const response = await request(route);
     assert.equal(response.status, 302, `${route} should require an account`);
@@ -100,7 +109,10 @@ test('account registration, login, protected pages, profile preferences, and log
   assert.equal((await request('/sync-sessions')).status, 200);
   assert.equal((await request('/route-setup')).status, 200);
   const routePage = await request('/route-setup');
-  assert.match(await routePage.text(), /Waiting for a fresh GPS fix/);
+  const routeHtml = await routePage.text();
+  assert.match(routeHtml, /-25\.74790, 28\.22930/);
+  assert.match(routeHtml, /GPS FIX/);
+  assert.match(routeHtml, /data-coords="-25\.7680, 28\.2375"/);
   const zeroOriginResponse = await request('/api/calculate-solar-route', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -108,6 +120,13 @@ test('account registration, login, protected pages, profile preferences, and log
   });
   assert.equal(zeroOriginResponse.status, 400);
   assert.match((await zeroOriginResponse.json()).error, /Destination/);
+  const sameOriginResponse = await request('/api/calculate-solar-route', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ startLat: 0, startLng: 0, destination: '0, 0', headwind: 0 }),
+  });
+  assert.equal(sameOriginResponse.status, 400);
+  assert.match((await sameOriginResponse.json()).error, /different from the starting point/);
   const badWindResponse = await request('/api/calculate-solar-route', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
