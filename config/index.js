@@ -14,12 +14,16 @@ function loadConfig(env = process.env) {
   };
   const source = env.SENSOR_SOURCE || 'http';
   if (!['http', 'mqtt'].includes(source)) throw new Error('SENSOR_SOURCE must be http or mqtt');
+  const simulationSetting = env.ENABLE_TELEMETRY_SIMULATION;
+  if (simulationSetting !== undefined && !['true', 'false'].includes(simulationSetting)) {
+    throw new Error('ENABLE_TELEMETRY_SIMULATION must be true or false');
+  }
   const offset = env.SENSOR_TIMEZONE_OFFSET || '+02:00';
   if (!/^[+-](?:0\d|1[0-3]):[0-5]\d$|^[+-]14:00$/.test(offset)) throw new Error('Invalid SENSOR_TIMEZONE_OFFSET');
   return {
     root: path.resolve(__dirname, '..'), port: number('PORT', 3000, 0, 65535),
     host: env.HOST || '127.0.0.1', source, token: env.SENSOR_API_TOKEN || '',
-    simulationEnabled: !isProduction && env.ENABLE_TELEMETRY_SIMULATION !== 'false',
+    simulationEnabled: simulationSetting === undefined ? !isProduction : simulationSetting === 'true',
     mongodbUri: env.MONGODB_URI || '',
     sessionSecret: env.SESSION_SECRET || randomBytes(32).toString('hex'), isProduction,
     timezoneOffset: offset, staleAfterMs: number('SENSOR_STALE_SECONDS', 60, 10, 3600) * 1000,

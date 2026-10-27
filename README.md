@@ -236,21 +236,60 @@ automatically. If the server uses a non-default URL, set `SENSOR_API_URL`, for
 example `http://127.0.0.1:3100`.
 
 For a quick browser-based simulation, open `/dashboard` in a non-production
-environment. The simulated feed starts automatically and sends synthetic readings
-through the same telemetry store and optimizer as the sensor integration, so
-the live cards and analysis update together. If a navigation trip is active,
-choose **Begin Simulation** on the dashboard to move the simulated GPS along
-that route; the map and navigation guidance update with it. The telemetry feed
-continues whether or not a route is selected or simulated. Route selection is
-optional and remains under the driver's control. Updates continue while the
-dashboard is open; closing or leaving the dashboard ends that browser's simulated feed
-feed. During route playback, vehicle speed accelerates from zero and varies
-along the route; **Log Today** adds the distance actually traveled. Without a
-running route simulation, simulated speed and distance remain zero. The simulation is
-disabled in production;
-set `ENABLE_TELEMETRY_SIMULATION=false` to disable it in other environments. It will
-not overwrite readings from a real sensor feed. The optimizer is a prototype
+environment. The simulated feed starts automatically and sends synthetic
+readings through the same telemetry store and optimizer as the sensor
+integration, so the live cards and analysis update together. If a navigation
+trip is active, choose **Begin Simulation** on the dashboard to move the
+simulated GPS along that route; the map and navigation guidance update with it.
+The telemetry feed continues whether or not a route is selected or simulated.
+Route selection is optional and remains under the driver's control. Updates
+continue while the dashboard is open; closing or leaving the dashboard ends
+that browser's simulated feed. During route playback, vehicle speed accelerates
+from zero and varies along the route; **Log Today** adds the distance actually
+traveled. Without a running route simulation, simulated speed and distance
+remain zero. The simulation defaults to disabled in production, but can be
+explicitly enabled for a hosted demo with `ENABLE_TELEMETRY_SIMULATION=true`.
+Set it to `false` to disable simulation in any environment. The endpoint refuses
+to overwrite readings from a real sensor feed. The optimizer is a prototype
 rule-based system, not a trained or autonomous AI model.
+
+## Deploying a simulated demo to Render
+
+Render runs the application with `NODE_ENV=production`, where the browser
+simulator is disabled by default. To show the same **simulated demo** as
+localhost, opt in explicitly in the Render service's **Environment** settings:
+
+| Variable | Value / action |
+|---|---|
+| `ENABLE_TELEMETRY_SIMULATION` | `true` |
+| `SENSOR_SOURCE` | `http` (prevents starting the AWS MQTT subscriber) |
+| `MONGODB_URI` | Add your private MongoDB connection string |
+| `SESSION_SECRET` | Add a stable, private secret of at least 32 bytes |
+| `NODE_ENV` | `production` (set this if it is not already configured) |
+
+This project requires MongoDB to start because it uses MongoDB for user accounts
+and browser sessions. Ensure your MongoDB deployment permits connections from
+the Render service. Never put the MongoDB URI or session secret in Git or in
+public logs.
+
+Use `npm install` as the build command and `npm start` as the start command.
+Do not hardcode `PORT=10000`; Render supplies `PORT` and the server reads it.
+Leave `HOST` unset; the production entry point binds to `0.0.0.0`. After saving
+environment changes, redeploy or restart the Render service. Open `/dashboard`
+and confirm that the feed says **SIMULATED FEED** and the automatic simulated
+feed status is active.
+
+`SENSOR_SOURCE=http` selects the HTTP sensor-ingestion mode; it does not itself
+turn on the simulator. The explicit `ENABLE_TELEMETRY_SIMULATION=true` setting
+does that. The simulator generates demo values in the browser and submits them
+to this app; no AWS or hardware upload is needed for that demo. If real sensor
+readings arrive, the simulation endpoint refuses to replace them.
+
+The Render instance keeps live telemetry and its history in process memory, so
+they reset on restart or redeploy. User accounts and sessions require the
+configured MongoDB connection. This deployment demonstrates the application
+with synthetic values; it does not make simulated irradiance, rainfall, battery,
+or vehicle-speed values into real hardware measurements.
 
 ## Account, route, and security notes
 

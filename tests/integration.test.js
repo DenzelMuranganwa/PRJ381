@@ -11,6 +11,27 @@ const config = loadConfig({ SENSOR_API_TOKEN:'test-only-token' });
 const base = Date.parse('2026-09-23T12:00:00Z');
 const reading = (time=base, extra={}) => ({ timestamp:new Date(time).toISOString(),temperature_c:25,humidity_pct:50,pressure_hpa:900,altitude_m:1000,wind_speed_ms:10,latitude:null,longitude:null,...extra });
 
+test('production simulation is disabled by default and requires an explicit boolean setting', () => {
+  const production = loadConfig({
+    NODE_ENV: 'production',
+    SESSION_SECRET: 'production-test-session-secret-32-bytes',
+  });
+  assert.equal(production.simulationEnabled, false);
+  assert.equal(loadConfig({
+    SESSION_SECRET: 'test-session-secret-which-is-long-enough',
+    ENABLE_TELEMETRY_SIMULATION: 'true',
+  }).simulationEnabled, true);
+  assert.equal(loadConfig({
+    NODE_ENV: 'production',
+    SESSION_SECRET: 'production-test-session-secret-32-bytes',
+    ENABLE_TELEMETRY_SIMULATION: 'true',
+  }).simulationEnabled, true);
+  assert.throws(() => loadConfig({
+    SESSION_SECRET: 'test-session-secret-which-is-long-enough',
+    ENABLE_TELEMETRY_SIMULATION: 'sometimes',
+  }), /ENABLE_TELEMETRY_SIMULATION must be true or false/);
+});
+
 test('no fake readings or recommendations at startup', () => {
   const store=new TelemetryStore(config,()=>base), a=optimize(store.snapshot());
   assert.equal(a.status,'waiting');assert.equal(a.recommendedSpeed,null);assert.equal(store.history.length,0);
@@ -146,7 +167,7 @@ test('browser simulation feed uses the telemetry store and enables complete opti
   assert.equal(invalidGpsResponse.status, 400);
 });
 
-test('simulation feed requires CSRF protection and cannot replace real or production telemetry', async t => {
+test('simulation feed requires CSRF protection, cannot replace real telemetry, and is opt-in in production', async t => {
   const store = new TelemetryStore(config);
   store.ingest(reading(Date.now(), { irradiance_wm2: 900, rainfall_mmh: 0 }));
   const server = createApp(config, store).listen(0, '127.0.0.1');
@@ -174,7 +195,6 @@ test('simulation feed requires CSRF protection and cannot replace real or produc
     NODE_ENV: 'production',
     SESSION_SECRET: 'production-test-session-secret-32-bytes',
     SENSOR_API_TOKEN: 'test-only-token',
-    ENABLE_TELEMETRY_SIMULATION: 'true',
   });
   const productionServer = createApp(productionConfig, new TelemetryStore(productionConfig))
     .listen(0, '127.0.0.1');
@@ -188,9 +208,45 @@ test('simulation feed requires CSRF protection and cannot replace real or produc
   assert.doesNotMatch(productionHtml, /Starting automatic simulated feed/);
   const disabledResponse = await fetch(`${productionUrl}/api/simulation/telemetry`, {
     method: 'POST',
-    headers: { Cookie: productionCookie, 'X-CSRF-Token': productionToken },
+    headers: {
+      Cookie: productionCookie,
+      'X-CSRF-Token': productionToken,
+      'X-Forwarded-Proto': 'https',
+    },
   });
   assert.equal(disabledResponse.status, 404);
+
+  const optedInConfig = loadConfig({
+    NODE_ENV: 'production',
+    SESSION_SECRET: 'production-test-session-secret-32-bytes',
+    SENSOR_API_TOKEN: 'test-only-token',
+    ENABLE_TELEMETRY_SIMULATION: 'true',
+  });
+  const optedInStore = new TelemetryStore(optedInConfig);
+  const optedInServer = createApp(optedInConfig, optedInStore).listen(0, '127.0.0.1');
+  await once(optedInServer, 'listening');
+  t.after(() => optedInServer.close());
+  const optedInUrl = `http://127.0.0.1:${optedInServer.address().port}`;
+  const optedInDashboard = await fetch(`${optedInUrl}/dashboard`, {
+    headers: { 'X-Forwarded-Proto': 'https' },
+  });
+  const optedInHtml = await optedInDashboard.text();
+  const optedInToken = optedInHtml.match(/data-csrf-token="([^"]+)"/)?.[1];
+  const optedInCookie = optedInDashboard.headers.get('set-cookie')?.split(';', 1)[0];
+  assert.match(optedInHtml, /Starting automatic simulated feed/);
+  const optedInResponse = await fetch(`${optedInUrl}/api/simulation/telemetry`, {
+    method: 'POST',
+    headers: {
+      Cookie: optedInCookie,
+      'X-CSRF-Token': optedInToken,
+      'X-Forwarded-Proto': 'https',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
+  });
+  assert.equal(optedInResponse.status, 200);
+  assert.equal(optedInStore.weather.source, 'simulation');
+  assert.equal(optedInStore.vehicle.source, 'simulation');
 });
 
 test('complete aligned history enables efficiency and performance forecasts; stale vehicle pauses them', () => {

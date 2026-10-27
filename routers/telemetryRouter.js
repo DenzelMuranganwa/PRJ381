@@ -168,7 +168,7 @@ function createTelemetryRouter(
   });
 
   router.post('/api/simulation/telemetry', (req, res, next) => {
-    if (config.isProduction || !config.simulationEnabled || !telemetryStore) {
+    if (!config.simulationEnabled || !telemetryStore) {
       return res.status(404).json({ error: 'The simulated feed is disabled.' });
     }
     next();
