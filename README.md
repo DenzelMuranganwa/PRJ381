@@ -124,15 +124,14 @@ Lax, and Secure when `NODE_ENV=production`.
 
 ## Guest-first heartbeat and sign-in transition
 
-1. A guest can open `/dashboard` without registering. The rendered page marks
-   whether the current request is authenticated using `data-authenticated`.
-2. `public/telemetry.js` detects a guest, sends an initial
-   `POST /api/sessions/guest-heartbeat`, and schedules another request every
-   30 seconds. The request uses the browser's session cookie.
-3. The route creates a `SES-GUEST-...` ID on the first heartbeat, then upserts
-   the guest document in `sync_sessions` on each heartbeat. Repeated requests
-   from the same browser update the same record rather than creating duplicates.
-   Authenticated requests do not create guest records.
+1. A guest can open `/dashboard` without registering.
+2. `public/session-sync.js` sends an initial `POST /api/sessions/heartbeat` and
+   schedules another request every five seconds while the dashboard or route
+   page is open. The request uses the browser's session cookie.
+3. The route creates a `SES-GUEST-...` ID on the first guest heartbeat, then
+   upserts the guest document in `sync_sessions` on each heartbeat. Authenticated
+   heartbeats update the current driver's session record instead. Both track
+   accepted weather and vehicle packets since that session began.
 4. On successful sign-in (`POST /signup` or `/signin`) or registration
    (`POST /register`), the router first retains the current guest session ID,
    regenerates the Express session, and sets the authenticated user. It then
@@ -140,7 +139,7 @@ Lax, and Secure when `NODE_ENV=production`.
 5. The router creates a `SES-DRIVER-...` identifier and upserts the authenticated
    driver's `sync_sessions` record with `isGuest: false` and the
    `"Solar Route Track Active"` segment. The dashboard is redirected to
-   `/dashboard`; its authenticated marker prevents further guest heartbeats.
+   `/dashboard`; subsequent heartbeats keep the driver record current.
 
 Cleanup is scoped to the guest record associated with the signing-in browser
 session; it does not delete guest records belonging to other visitors.
@@ -259,8 +258,14 @@ rule-based system, not a trained or autonomous AI model.
 - `/signup` and `/signin` show the sign-in screen; successful sign-in and
   registration regenerate the Express session ID.
 - `/route-setup` and its route-planning APIs require an authenticated user.
-  Planning uses a fresh GPS fix from weather telemetry; without one, the
-  dashboard displays that GPS is unavailable and does not submit a calculation.
+  Planning uses a fresh GPS fix from weather telemetry and refreshes the
+  starting point while the page is open; without one, it waits for a fix and
+  does not submit a calculation. The dashboard navigation map follows live GPS
+  coordinates in latitude/longitude order.
+- While a dashboard or route page is open, its browser syncs the guest or driver
+  session every five seconds. `packetsSent` counts accepted weather and vehicle
+  readings received during that session; session history is persisted in
+  MongoDB when configured.
 - Route calculations, location suggestions, and guest heartbeats are
   rate-limited. Route calculations validate coordinates and wind input, and
   return a provider error rather than treating unavailable elevation as zero.

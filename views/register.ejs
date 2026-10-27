@@ -10,7 +10,7 @@
 <body class="auth-page" data-theme="dark">
   <main class="auth-shell">
     <section class="auth-card" aria-labelledby="auth-title">
-      <a class="auth-brand" href="/signup" aria-label="IWOS Field sign in">
+      <a class="auth-brand" href="/signin" aria-label="IWOS Field sign in">
         <span class="brand-square"></span><span class="badge-text">IWOS FIELD</span>
       </a>
       <a class="auth-back-link" href="/dashboard" aria-label="Back to Dashboard"><span aria-hidden="true">←</span> Back to Dashboard</a>
@@ -37,7 +37,7 @@
         <input id="vehicleNickname" name="vehicleNickname" type="text" autocomplete="off" maxlength="40" value="<%= values.vehicleNickname || '' %>" required>
         <button class="auth-submit" type="submit">Create Account</button>
       </form>
-      <p class="auth-switch">Already registered? <a href="/signup">Sign in</a></p>
+      <p class="auth-switch">Already registered? <a href="/signin">Sign in</a></p>
       <p class="auth-switch">You can add a profile picture later in Personalization.</p>
     </section>
   </main>

@@ -19,7 +19,7 @@ function createTelemetryRouter(
   const routeAuthenticated = (req, res, next) => requireApiAuth(req, res, next, userStore);
   const guestHeartbeatLimiter = rateLimit({
     windowMs: 60 * 1000,
-    limit: 10,
+    limit: 20,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     message: { error: 'Too many guest heartbeats. Try again shortly.' },
@@ -61,7 +61,7 @@ function createTelemetryRouter(
     const password = typeof body.password === 'string' ? body.password : '';
     const user = await userStore.authenticate(email, password);
     if (!user) return res.status(401).render('views/signin', { error: 'Email or password is incorrect.', email });
-    await startAuthenticatedSession(req, user, syncSessionsCollection);
+    await startAuthenticatedSession(req, user, syncSessionsCollection, telemetryStore);
     res.redirect('/dashboard');
   });
 
@@ -82,7 +82,7 @@ function createTelemetryRouter(
     if (error) return res.status(400).render('views/register', { error, values });
     try {
       const user = await userStore.createUser({ ...values, password });
-      await startAuthenticatedSession(req, user, syncSessionsCollection);
+      await startAuthenticatedSession(req, user, syncSessionsCollection, telemetryStore);
       res.redirect('/dashboard');
     } catch (creationError) {
       if (creationError.code === 'EMAIL_EXISTS') {
@@ -227,22 +227,47 @@ function createTelemetryRouter(
     res.json({ accepted: true, source });
   });
 
-  router.post('/api/sessions/guest-heartbeat', guestHeartbeatLimiter, async (req, res) => {
+  router.post(['/api/sessions/heartbeat', '/api/sessions/guest-heartbeat'], guestHeartbeatLimiter, async (req, res) => {
     if (!syncSessionsCollection) {
       return res.status(503).json({ error: 'Session persistence is not configured.' });
     }
-    if (req.session.user) return res.status(204).end();
-
     const now = Date.now();
+    const packetCount = telemetryPacketCount(telemetryStore);
+    if (req.session.user) {
+      if (!req.session.driverSessionId || !req.session.driverSessionStartedAt) {
+        req.session.driverSessionId = `SES-DRIVER-${randomUUID()}`;
+        req.session.driverSessionStartedAt = now;
+        req.session.driverTelemetryPacketBaseline = packetCount;
+      }
+      if (!Number.isFinite(req.session.driverTelemetryPacketBaseline)) {
+        req.session.driverTelemetryPacketBaseline = packetCount;
+      }
+      await upsertSyncSession(syncSessionsCollection, req.session.driverSessionId, {
+        driverName: req.session.user.fullName,
+        duration: formatDuration(now - req.session.driverSessionStartedAt),
+        isGuest: false,
+        packetsSent: Math.max(0, packetCount - req.session.driverTelemetryPacketBaseline),
+        segment: 'Solar Route Track Active',
+        status: 'Active',
+        statusClass: 'status-active',
+        updatedAt: new Date(now),
+      });
+      return res.status(204).end();
+    }
+
     if (!req.session.guestSessionId || !req.session.guestSessionStartedAt) {
       req.session.guestSessionId = `SES-GUEST-${randomBytes(4).toString('hex')}`;
       req.session.guestSessionStartedAt = now;
+      req.session.guestTelemetryPacketBaseline = packetCount;
+    }
+    if (!Number.isFinite(req.session.guestTelemetryPacketBaseline)) {
+      req.session.guestTelemetryPacketBaseline = packetCount;
     }
     await upsertSyncSession(syncSessionsCollection, req.session.guestSessionId, {
       driverName: 'Guest Observer',
       duration: formatDuration(now - req.session.guestSessionStartedAt),
       isGuest: true,
-      packetsSent: 0,
+      packetsSent: Math.max(0, packetCount - req.session.guestTelemetryPacketBaseline),
       segment: 'Public Spectator View',
       status: 'Active',
       statusClass: 'status-active',
@@ -257,21 +282,24 @@ function createTelemetryRouter(
 
   // 1. ROUTE SETUP PAGE: Passes position and default markers
   router.get('/route-setup', authenticated, (req, res) => {
+    const snapshot = telemetryStore && telemetryStore.snapshot();
+    const weather = snapshot && snapshot.state === 'live' ? snapshot.weather?.values : null;
+    const hasGps = Number.isFinite(weather?.latitude) && Number.isFinite(weather?.longitude);
+    const latitude = hasGps ? weather.latitude : -25.7479;
+    const longitude = hasGps ? weather.longitude : 28.2293;
+    const windKmh = Number.isFinite(weather?.wind_speed_ms) ? weather.wind_speed_ms * 3.6 : null;
     res.render('pages/route-setUp', {
       pageTitle: 'Route Navigation - IWOS',
       activePage: 'route-setup',
-      initLat: -25.7479,
-      initLng: 28.2293,
-      windSpeed: 13,
       piPosition: {
-        lat: -25.7479,
-        lng: 28.2293,
-        lastSeen: new Date(),
-        windKmh: 13,
-        tempC: 25,
-        irradiance: 850,
+        lat: latitude,
+        lng: longitude,
+        lastSeen: hasGps ? new Date(snapshot.weather.observedAt) : null,
+        windKmh,
+        tempC: weather?.temperature_c ?? null,
+        irradiance: weather?.irradiance_wm2 ?? null,
       },
-      hasGps: true,
+      hasGps,
       savedPlaces: [
         { name: 'Kempton Park Hub', coords: '-26.1325, 28.2312', distance: 'Sector 1' },
         { name: 'Pretoria Proving Loop', coords: '-25.7680, 28.2375', distance: 'Sector 2' }
@@ -534,7 +562,7 @@ function createTelemetryRouter(
 async function requireAuth(req, res, next, userStore) {
   const userId = req.session.user?.id || req.session.userId;
   const user = req.session.user || (userId ? await userStore.getById(userId) : null);
-  if (!user) return res.redirect('/signup');
+  if (!user) return res.redirect('/signin');
   req.session.user = user;
   res.locals.currentUser = user;
   res.locals.themePreference = user.themePreference;
@@ -617,14 +645,18 @@ function startUserSession(req, user) {
   });
 }
 
-async function startAuthenticatedSession(req, user, syncSessionsCollection) {
+async function startAuthenticatedSession(req, user, syncSessionsCollection, telemetryStore) {
   const guestSessionId = req.session.guestSessionId;
   await startUserSession(req, user);
-  if (!syncSessionsCollection) return;
+  if (!syncSessionsCollection) {
+    await saveSession(req);
+    return;
+  }
 
   if (!req.session.driverSessionId || !req.session.driverSessionStartedAt) {
     req.session.driverSessionId = `SES-DRIVER-${randomUUID()}`;
     req.session.driverSessionStartedAt = Date.now();
+    req.session.driverTelemetryPacketBaseline = telemetryPacketCount(telemetryStore);
   }
   if (guestSessionId) {
     await syncSessionsCollection.deleteOne({ sessionId: guestSessionId, isGuest: true });
@@ -640,6 +672,22 @@ async function startAuthenticatedSession(req, user, syncSessionsCollection) {
     statusClass: 'status-active',
     updatedAt: new Date(now),
   });
+  await saveSession(req);
+}
+
+function saveSession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.save(error => {
+      if (error) return reject(error);
+      resolve();
+    });
+  });
+}
+
+function telemetryPacketCount(telemetryStore) {
+  return telemetryStore
+    ? telemetryStore.stats.accepted + telemetryStore.stats.vehicleAccepted
+    : 0;
 }
 
 function upsertSyncSession(collection, sessionId, fields) {

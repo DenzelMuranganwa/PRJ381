@@ -30,9 +30,10 @@ class SyncSessionsCollection {
 test('guest heartbeat upserts a guest session and registration transitions it to a driver session', async t => {
   const config = loadConfig({ SESSION_SECRET: 'test-session-secret-which-is-long-enough' });
   const syncSessionsCollection = new SyncSessionsCollection();
+  const telemetryStore = new TelemetryStore(config);
   const server = createApp(
     config,
-    new TelemetryStore(config),
+    telemetryStore,
     new UserStore(),
     { syncSessionsCollection },
   ).listen(0, '127.0.0.1');
@@ -71,6 +72,12 @@ test('guest heartbeat upserts a guest session and registration transitions it to
   assert.equal(guestSession.statusClass, 'status-active');
   assert.ok(guestSession.updatedAt instanceof Date);
 
+  telemetryStore.stats.accepted = 2;
+  telemetryStore.stats.vehicleAccepted = 1;
+  const guestUpdate = await request('/api/sessions/heartbeat', { method: 'POST' });
+  assert.equal(guestUpdate.status, 204);
+  assert.equal(syncSessionsCollection.documents.values().next().value.packetsSent, 3);
+
   const registration = new URLSearchParams({
     _csrf: csrfToken,
     fullName: 'Test Driver',
@@ -95,4 +102,10 @@ test('guest heartbeat upserts a guest session and registration transitions it to
   assert.equal(driverSession.status, 'Active');
   assert.equal(driverSession.statusClass, 'status-active');
   assert.ok(driverSession.updatedAt instanceof Date);
+
+  telemetryStore.stats.accepted = 4;
+  telemetryStore.stats.vehicleAccepted = 2;
+  const driverUpdate = await request('/api/sessions/heartbeat', { method: 'POST' });
+  assert.equal(driverUpdate.status, 204);
+  assert.equal(syncSessionsCollection.documents.values().next().value.packetsSent, 3);
 });

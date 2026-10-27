@@ -50,7 +50,7 @@
             <strong>Guest</strong>
             <span>Browsing public telemetry</span>
           </div>
-          <a href="/signup" class="profile-menu-link">Sign In</a>
+          <a href="/signin" class="profile-menu-link">Sign In</a>
           <a href="/register" class="profile-menu-link">Register</a>
         <% } %>
         
@@ -71,7 +71,7 @@
         <% } %>
       </div>
     </details>
-    <% if (!userObj) { %><a class="auth-nav-link auth-nav-primary" href="/signup">Sign In</a><% } %>
+    <% if (!userObj) { %><a class="auth-nav-link auth-nav-primary" href="/signin">Sign In</a><% } %>
   </div>
 </header>
 
@@ -139,7 +139,7 @@
         </button>
       </form>
     <% } else { %>
-      <a href="/signup" class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'signup') ? 'active' : '' %>">
+      <a href="/signin" class="nav-link <%= (typeof activePage !== 'undefined' && activePage === 'signin') ? 'active' : '' %>">
         <span class="nav-icon">↪</span>
         <span>Sign In</span>
       </a>

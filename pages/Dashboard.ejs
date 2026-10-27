@@ -414,10 +414,7 @@
       // 5. Normalization & Spatial Functions
       function parseToLatLng(coord) {
         if (!coord) return null;
-        let lat = Number(coord[0]);
-        let lng = Number(coord[1]);
-        if (lat > 0 && lng < 0) return [lng, lat];
-        return [lat, lng];
+        return [Number(coord[0]), Number(coord[1])];
       }
 
       function haversineMeters(c1, c2) {
@@ -741,7 +738,7 @@
       const simBtn = document.getElementById('simulateDriveBtn');
       let simInterval = null;
 
-      simBtn.addEventListener('click', () => {
+      if (simBtn) simBtn.addEventListener('click', () => {
         if (simInterval) {
           clearInterval(simInterval);
           simInterval = null;

@@ -15,24 +15,6 @@
   let distanceTodayKm = 0;
   let lastSimulationTick = null;
 
-  if (document.body.dataset.authenticated !== 'true') {
-    const sendGuestHeartbeat = async () => {
-      try {
-        const response = await fetch('/api/sessions/guest-heartbeat', {
-          method: 'POST',
-          cache: 'no-store',
-          headers: { 'Content-Type': 'application/json' },
-          body: '{}',
-        });
-        if (!response.ok) throw new Error(`Guest heartbeat failed with status ${response.status}`);
-      } catch (error) {
-        console.warn(error);
-      }
-    };
-    sendGuestHeartbeat();
-    window.setInterval(sendGuestHeartbeat, 30000);
-  }
-
   function renderTrack(history) {
     const line = document.getElementById('gps-line');
     if (!line) return;

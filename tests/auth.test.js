@@ -15,7 +15,8 @@ test('account registration, login, protected pages, profile preferences, and log
   assert.throws(() => loadConfig({ NODE_ENV: 'production', SESSION_SECRET: 'too-short' }), /SESSION_SECRET/);
   const config = loadConfig({ SESSION_SECRET: 'test-session-secret-which-is-long-enough' });
   const userStore = new UserStore();
-  const server = createApp(config, new TelemetryStore(config), userStore).listen(0, '127.0.0.1');
+  const telemetryStore = new TelemetryStore(config);
+  const server = createApp(config, telemetryStore, userStore).listen(0, '127.0.0.1');
   await once(server, 'listening');
   const uploadedPaths = [];
   t.after(async () => {
@@ -58,7 +59,7 @@ test('account registration, login, protected pages, profile preferences, and log
   for (const route of ['/sync-sessions', '/route-setup', '/settings']) {
     const response = await request(route);
     assert.equal(response.status, 302, `${route} should require an account`);
-    assert.equal(response.headers.get('location'), '/signup');
+    assert.equal(response.headers.get('location'), '/signin');
   }
 
   const registerPage = await request('/register');
@@ -108,10 +109,19 @@ test('account registration, login, protected pages, profile preferences, and log
   const authenticatedToken = csrfToken(dashboardHtml);
   assert.equal((await request('/sync-sessions')).status, 200);
   assert.equal((await request('/route-setup')).status, 200);
+  const waitingRoutePage = await request('/route-setup');
+  assert.match(await waitingRoutePage.text(), /Waiting for a fresh GPS fix/);
+  telemetryStore.ingest({
+    timestamp: new Date().toISOString(),
+    latitude: -25.75,
+    longitude: 28.23,
+    wind_speed_ms: 2,
+  });
   const routePage = await request('/route-setup');
   const routeHtml = await routePage.text();
-  assert.match(routeHtml, /-25\.74790, 28\.22930/);
+  assert.match(routeHtml, /-25\.75000, 28\.23000/);
   assert.match(routeHtml, /GPS FIX/);
+  assert.match(routeHtml, /pollVehicleFix/);
   assert.match(routeHtml, /data-coords="-25\.7680, 28\.2375"/);
   const zeroOriginResponse = await request('/api/calculate-solar-route', {
     method: 'POST',
@@ -220,18 +230,38 @@ test('account registration, login, protected pages, profile preferences, and log
   assert.equal(afterLogout.status, 200);
   assert.match(await afterLogout.text(), />Guest</);
 
-  const signinPage = await request('/signup');
-  const signinResponse = await request('/signup', {
+  const signinPage = await request('/signin');
+  const signinHtml = await signinPage.text();
+  assert.match(signinHtml, /action="\/signin"/);
+  const invalidSigninResponse = await request('/signin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      _csrf: csrfToken(await signinPage.text()),
+      _csrf: csrfToken(signinHtml),
+      email: 'test@example.com',
+      password: 'wrong-password',
+    }),
+  });
+  assert.equal(invalidSigninResponse.status, 401);
+  assert.match(await invalidSigninResponse.text(), /Email or password is incorrect/);
+  const signinResponse = await request('/signin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      _csrf: csrfToken(signinHtml),
       email: 'test@example.com',
       password: 'StrongPass123',
     }),
   });
   assert.equal(signinResponse.status, 302);
   assert.equal(signinResponse.headers.get('location'), '/dashboard');
+  const signedInDashboard = await request('/dashboard');
+  const signedInHtml = await signedInDashboard.text();
+  assert.equal(signedInDashboard.status, 200);
+  assert.match(signedInHtml, />Updated User</);
+  assert.match(signedInHtml, /data-authenticated="true"/);
+  assert.equal((await request('/sync-sessions')).status, 200);
+  assert.equal((await request('/route-setup')).status, 200);
   assert.equal((await request('/logout')).status, 404);
   const postLogoutToken = csrfToken(await (await request('/dashboard')).text());
   const postLogoutResponse = await request('/logout', {

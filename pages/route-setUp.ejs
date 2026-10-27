@@ -49,9 +49,9 @@
             </div>
           </div>
         </div>
-        <div class="sensor-tag">
+        <div class="sensor-tag" id="gpsStatusTag">
           <span class="pulse-dot"></span>
-          <span><%= hasGps ? 'GPS FIX' : 'NO GPS FIX' %></span>
+          <span><%= hasGps ? 'GPS FIX' : 'WAITING FOR GPS' %></span>
         </div>
       </div>
 
@@ -119,13 +119,14 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/session-sync.js" defer></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const hasVehicleGps = <%- JSON.stringify(hasGps) %>;
-      const vehicleCoords = hasVehicleGps
+      let hasVehicleGps = <%- JSON.stringify(hasGps) %>;
+      let vehicleCoords = hasVehicleGps
         ? [<%- JSON.stringify(piPosition.lat) %>, <%- JSON.stringify(piPosition.lng) %>]
         : [-25.7479, 28.2293];
-      const currentWind = <%- JSON.stringify(piPosition.windKmh) %> ?? 0;
+      let currentWind = <%- JSON.stringify(piPosition.windKmh) %> ?? 0;
 
       const map = L.map('map', { zoomControl: false }).setView(vehicleCoords, 14);
 
@@ -135,15 +136,79 @@
 
       setTimeout(() => map.invalidateSize(), 200);
 
-      if (hasVehicleGps) {
-        L.circleMarker(vehicleCoords, {
+      let vehicleMarker = hasVehicleGps ? L.circleMarker(vehicleCoords, {
           radius: 8,
           color: '#00e599',
           fillColor: '#ffffff',
           fillOpacity: 1,
           weight: 3
-        }).addTo(map).bindPopup('Latest weather sensor GPS fix');
+        }).addTo(map).bindPopup('Latest weather sensor GPS fix') : null;
+
+      const startCoords = document.getElementById('startCoords');
+      const gpsStatusTag = document.getElementById('gpsStatusTag');
+      const headerWind = document.getElementById('headerWind');
+      const updateVehicleFix = snapshot => {
+        const values = snapshot.weather?.values;
+        const fresh = snapshot.state === 'live'
+          && Number.isFinite(values?.latitude)
+          && Number.isFinite(values?.longitude);
+
+        if (!fresh) {
+          hasVehicleGps = false;
+          if (vehicleMarker) {
+            map.removeLayer(vehicleMarker);
+            vehicleMarker = null;
+          }
+          startCoords.textContent = 'Waiting for a fresh GPS fix';
+          gpsStatusTag.lastElementChild.textContent = 'NO GPS FIX';
+          headerWind.textContent = 'Wind unavailable';
+          return;
+        }
+
+        const nextCoords = [values.latitude, values.longitude];
+        const firstFix = !hasVehicleGps;
+        hasVehicleGps = true;
+        vehicleCoords = nextCoords;
+        currentWind = Number.isFinite(values.wind_speed_ms) ? values.wind_speed_ms * 3.6 : 0;
+        if (!vehicleMarker) {
+          vehicleMarker = L.circleMarker(nextCoords, {
+            radius: 8,
+            color: '#00e599',
+            fillColor: '#ffffff',
+            fillOpacity: 1,
+            weight: 3
+          }).addTo(map).bindPopup('Latest weather sensor GPS fix');
+        } else {
+          vehicleMarker.setLatLng(nextCoords);
+        }
+        if (firstFix) map.setView(nextCoords, 14);
+        startCoords.textContent = `${nextCoords[0].toFixed(5)}, ${nextCoords[1].toFixed(5)}`;
+        gpsStatusTag.lastElementChild.textContent = 'GPS FIX';
+        headerWind.textContent = Number.isFinite(values.wind_speed_ms)
+          ? `${currentWind.toFixed(1)} km/h Wind`
+          : 'Wind unavailable';
+      };
+
+      let gpsPollInFlight = false;
+      async function pollVehicleFix() {
+        if (gpsPollInFlight) return;
+        gpsPollInFlight = true;
+        try {
+          const response = await fetch('/api/status', {
+            cache: 'no-store',
+            signal: AbortSignal.timeout(5000),
+          });
+          if (!response.ok) throw new Error(`Telemetry status request failed with HTTP ${response.status}.`);
+          updateVehicleFix(await response.json());
+        } catch (error) {
+          console.warn('Route setup could not refresh vehicle GPS:', error);
+          updateVehicleFix({ state: 'offline' });
+        } finally {
+          gpsPollInFlight = false;
+          window.setTimeout(pollVehicleFix, 2000);
+        }
       }
+      void pollVehicleFix();
 
       let targetMarker = null;
       let routePolylines = [];

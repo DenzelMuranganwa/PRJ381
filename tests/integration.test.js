@@ -93,9 +93,9 @@ test('HTTP ingestion, authentication, page rendering, limits and malformed JSON'
   assert.equal((await fetch(url+'/',{redirect:'manual'})).headers.get('location'),'/dashboard');
   for(const route of ['/sync-sessions','/route-setup']) {
     const response=await fetch(url+route,{redirect:'manual'});
-    assert.equal(response.status,302);assert.equal(response.headers.get('location'),'/signup');
+    assert.equal(response.status,302);assert.equal(response.headers.get('location'),'/signin');
   }
-  for(const route of ['/telemetry.js','/integration.css']) assert.equal((await fetch(url+route)).status,200);
+  for(const route of ['/telemetry.js','/session-sync.js','/integration.css']) assert.equal((await fetch(url+route)).status,200);
 });
 
 test('browser simulation feed uses the telemetry store and enables complete optimization', async t => {
