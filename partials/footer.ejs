@@ -1,0 +1,24 @@
+<footer class="iwos-footer">
+  <div class="footer-container">
+    <div class="footer-status-pill">
+      <span class="sensor-dot"></span>
+      <strong class="vehicle-tag"><%= currentUser ? (currentUser.vehicleNickname || 'IWOS-07') : 'IWOS-07' %></strong>
+      <span class="lead-badge">LEAD</span>
+      <span class="divider">&bull;</span>
+      <span class="battery-tag" data-battery>—</span>
+      <span class="divider">&bull;</span>
+      <span class="state-text" data-feed-state>Waiting</span>
+    </div>
+
+    <div class="footer-meta">
+      <span data-transport>Sensor feed</span>
+      <span>&bull;</span>
+      <span data-age>No reading yet</span>
+    </div>
+  </div>
+</footer>
+
+
+<script src="/js.js"></script>
+<script src="/session-sync.js" defer></script>
+<script src="/telemetry.js" defer></script>

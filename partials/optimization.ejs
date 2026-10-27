@@ -1,0 +1,43 @@
+<section class="telemetry-section" id="optimization-section">
+  <div class="sensor-section-heading">
+    <h3 class="section-title">AI OPTIMISATION &amp; DECISION SUPPORT</h3>
+    <span class="sensor-note">Automatic sensor analysis</span>
+  </div>
+  <div class="optimization-panel">
+    <div class="optimization-summary" aria-live="polite">
+      <span class="sensor-eyebrow">CURRENT ANALYSIS</span>
+      <h2 data-ai="recommendation">Waiting for sensor data</h2>
+      <p data-ai="reason">Readings will appear automatically when the station connects.</p>
+      <ul id="weather-observations"></ul>
+    </div>
+    <div class="optimization-metrics">
+      <% const metrics = [
+        ['recommendedSpeed','PROTOTYPE SPEED TARGET','Requires solar, rain and battery'],
+        ['batteryMode','BATTERY MODE','Requires battery and irradiance'],
+        ['efficiencyScore','EFFICIENCY RULE SCORE','Heuristic score, not measured efficiency'],
+        ['inputCoverage','INPUT COVERAGE','Available inputs, not AI confidence'],
+        ['energyStatus','ENERGY STATUS','Requires battery and irradiance'],
+        ['status','ANALYSIS STATUS','Based on measurement freshness']
+      ]; metrics.forEach(([key,label,note]) => { %>
+      <article class="optimization-metric">
+        <h4><%= label %></h4><strong data-ai="<%= key %>">—</strong><p><%= note %></p>
+      </article>
+      <% }); %>
+    </div>
+  </div>
+  <div class="sensor-missing" id="missing-inputs">Waiting for measured inputs.</div>
+  <p class="sensor-note">Performance estimate: <span data-ai="performance">Waiting for complete measured inputs and history</span></p>
+  <div class="sensor-section-heading prediction-heading">
+    <h3 class="section-title">SHORT-TERM WEATHER TRENDS</h3>
+    <span class="sensor-note">5-minute estimates · 3+ readings over at least 20 seconds</span>
+  </div>
+  <div class="prediction-grid">
+    <% [['temperature','AIR TEMPERATURE','°C'],['wind','WIND SPEED','km/h'],['irradiance','IRRADIANCE','W/m²'],['efficiency','EFFICIENCY RULE SCORE','/ 100']].forEach(([key,label,unit]) => { %>
+    <article class="feed-card prediction-card">
+      <h4><%= label %></h4><div><strong data-forecast="<%= key %>">—</strong><span class="unit"> <%= unit %></span></div>
+      <p class="sensor-note" data-trend="<%= key %>">Waiting for measurements</p>
+    </article>
+    <% }); %>
+  </div>
+  <p class="sensor-method">SolarCarAI v2 rules and linear trends. Prototype decision support; no vehicle controls are connected. Speed targets need vehicle-specific validation. Trend estimates are not weather forecasts.</p>
+</section>

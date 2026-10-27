@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IWOS Field - Telemetry Dashboard</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/css.css" />
+  <link rel="stylesheet" href="/integration.css" />
+
+  <style>
+    .dynamics-map-side {
+      position: relative;
+      z-index: 1;
+    }
+
+    .map-widget-wrapper {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      min-height: 380px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid #1c2432;
+      background: #0c1016;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      isolation: isolate;
+      z-index: 1;
+    }
+
+    #dashboard-map {
+      width: 100%;
+      height: 100%;
+      background: #0c1016;
+      z-index: 1;
+    }
+
+    .leaflet-pane {
+      z-index: 10 !important;
+    }
+    .leaflet-top,
+    .leaflet-bottom {
+      z-index: 20 !important;
+    }
+
+    /* Turn-by-Turn Clean Top HUD */
+    .nav-hud-top {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(17, 23, 34, 0.96);
+      border: 1.5px solid #283548;
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 50;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .nav-hud-top.rerouting {
+      border-color: #f59e0b;
+      background: rgba(30, 24, 15, 0.96);
+    }
+
+    .nav-maneuver-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #00e599;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .nav-maneuver-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: #0b111a;
+      fill: none;
+      stroke-width: 2.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-hud-top.rerouting .nav-maneuver-icon {
+      background: #f59e0b;
+    }
+
+    .nav-direction-text {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .nav-maneuver-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-maneuver-sub {
+      font-size: 0.74rem;
+      color: #00e599;
+      font-weight: 600;
+      margin-top: 3px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .nav-hud-top.rerouting .nav-maneuver-sub {
+      color: #f59e0b;
+    }
+
+    .nav-maneuver-sub span {
+      color: #8b98a9;
+      font-weight: 400;
+    }
+
+    .nav-voice-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid #283548;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+    }
+
+    .nav-voice-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: #ffffff;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-voice-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* Google Maps Status Bottom Bar */
+    .nav-hud-bottom {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(17, 23, 34, 0.95);
+      border: 1px solid #283548;
+      border-radius: 12px;
+      padding: 9px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 50;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-stats-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav-eta {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #00e599;
+    }
+
+    .nav-metrics {
+      font-size: 0.72rem;
+      color: #8b98a9;
+    }
+
+    .nav-exit-btn {
+      background: #ef4444;
+      border: none;
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .nav-exit-btn:hover {
+      opacity: 0.85;
+    }
+
+    .route-controls-group {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body data-theme="<%= typeof themePreference !== 'undefined' ? themePreference : 'dark' %>" data-authenticated="<%= currentUser ? 'true' : 'false' %>" data-simulation-enabled="<%= typeof simulationEnabled !== 'undefined' && simulationEnabled ? 'true' : 'false' %>" data-csrf-token="<%= csrfToken %>">
+
+  <%- include('../partials/header', { activePage: 'dashboard' }) %>
+
+  <div class="app-main-layout">
+    <main class="page-container">
+
+      <!-- Section 1: Live Telemetry Feed -->
+      <section class="telemetry-section">
+        <h3 class="section-title">TELEMETRY FEED</h3>
+
+        <% const feeds = [
+          {key:'temperature', label:'Atmos', unit:'°C', color:'val-blue', icon:'thermometer'},
+          {key:'wind', label:'Wind', unit:'km/h', color:'val-cyan', icon:'wind'}
+        ]; %>
+        <div class="sensor-status-row" role="status" aria-live="polite">
+          <span class="sensor-pill" data-feed-state>Waiting</span>
+          <span data-feed-detail>Connecting to dashboard…</span>
+          <% if (typeof simulationEnabled !== 'undefined' && simulationEnabled) { %>
+            <span id="simulation-feed-status" class="sensor-note" aria-live="polite">Starting automatic simulated feed…</span>
+          <% } %>
+        </div>
+        <noscript>Enable JavaScript to receive live sensor updates.</noscript>
+        <div class="telemetry-cards-row">
+          <% feeds.forEach(card => { %>
+            <article class="feed-card">
+              <div class="card-header">
+                <div class="card-label">
+                  <span class="sensor-dot"></span>
+                  <span><%= card.label %></span>
+                </div>
+
+                <% if (card.icon === 'sun') { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                  </svg>
+                <% } else if (card.icon === 'thermometer') { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+                  </svg>
+                <% } else if (card.icon === 'wind') { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path>
+                  </svg>
+                <% } else { %>
+                  <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                  </svg>
+                <% } %>
+              </div>
+
+              <div class="card-metric">
+                <span class="val <%= card.color %>" data-value="<%= card.key %>">—</span>
+                <span class="unit"><%= card.unit %></span>
+              </div>
+              <p class="sensor-note" data-note="<%= card.key %>">Awaiting measurement</p>
+            </article>
+          <% }) %>
+        </div>
+        <div class="sensor-secondary">
+          <span>Humidity <strong data-value="humidity">—</strong> %</span>
+          <span>Pressure <strong data-value="pressure">—</strong> hPa</span>
+          <span>Altitude <strong data-value="altitude">—</strong> m (barometric)</span>
+          <span>Measured <strong data-value="timestamp">—</strong></span>
+        </div>
+      </section>
+
+      <!-- Section 2: Vehicle Dynamics & Live Map Navigation -->
+      <section class="telemetry-section">
+        <h3 class="section-title">VEHICLE DYNAMICS &amp; TRACK POSITION</h3>
+
+        <div class="dynamics-panel">
+          <div class="dynamics-info-side">
+            <div class="stats-pair">
+              <div class="stat-col">
+                <span class="stat-tag">CURRENT SPEED</span>
+                <div class="stat-data">
+                  <span class="stat-num" data-value="speed">—</span>
+                  <span class="unit">km/h</span>
+                </div>
+              </div>
+              <div class="stat-col">
+                <span class="stat-tag">LOG TODAY</span>
+                <div class="stat-data">
+                  <span class="stat-num" data-value="distance">—</span>
+                  <span class="unit">km</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="gps-coordinates">
+              <svg class="pin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+              <span data-value="gps">Waiting for a GPS fix</span>
+            </div>
+
+            <div class="route-controls-group">
+              <a href="/route-setup" class="mobile-btn" style="display: inline-block; text-align: center; text-decoration: none; padding: 8px 16px; font-size: 0.8rem; background: #7075f8; color: #fff; border-radius: 8px; font-weight: 600;">
+                Set / Change Route
+              </a>
+              <% if (typeof simulationEnabled !== 'undefined' && simulationEnabled) { %>
+                <button type="button" id="beginSimulationBtn" class="mobile-btn" disabled>
+                  Begin Simulation
+                </button>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="dynamics-divider"></div>
+
+          <!-- Dynamic Leaflet Map Container -->
+          <div class="dynamics-map-side">
+            <div class="map-widget-wrapper">
+              <div id="dashboard-map"></div>
+            </div>
+            <p class="sensor-note" style="margin-top: 6px;">Real-time GPS track &amp; active solar navigation overlay</p>
+          </div>
+        </div>
+      </section>
+
+      <%- include('../partials/optimization') %>
+    </main>
+  </div>
+
+  <%- include('../partials/footer') %>
+
+  <!-- Leaflet Map & Dynamic Real-Time Navigation Engine -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const mapContainer = document.getElementById('dashboard-map');
+      if (!mapContainer) return;
+
+      const fallbackLat = -25.7479;
+      const fallbackLng = 28.2293;
+
+      // 1. Initialize Leaflet Map
+      const map = L.map('dashboard-map', { zoomControl: false }).setView([fallbackLat, fallbackLng], 14);
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+
+      setTimeout(() => map.invalidateSize(), 200);
+
+      // 2. Vehicle Marker
+      const carIcon = L.divIcon({
+        className: 'custom-car-marker',
+        html: `<div style="width: 14px; height: 14px; background: #00e599; border: 2.5px solid #ffffff; border-radius: 50%; box-shadow: 0 0 12px #00e599;"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+      const carMarker = L.marker([fallbackLat, fallbackLng], { icon: carIcon }).addTo(map);
+
+      // 3. Clean SVG Maneuver Icons (No emojis)
+      function getSvgManeuverIcon(modifier, type) {
+        const mod = (modifier || '').toLowerCase();
+        const t = (type || '').toLowerCase();
+
+        if (t === 'arrive') {
+          return `<svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`;
+        }
+        if (t.includes('roundabout') || t.includes('rotary')) {
+          return `<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><polyline points="21 3 21 9 15 9"/></svg>`;
+        }
+        if (mod.includes('u-turn')) {
+          return `<svg viewBox="0 0 24 24"><path d="M9 10h6a4 4 0 0 1 0 8H5"/><polyline points="9 14 5 18 9 22"/></svg>`;
+        }
+        if (mod.includes('right')) {
+          return `<svg viewBox="0 0 24 24"><line x1="6" y1="18" x2="16" y2="8"/><polyline points="8 8 16 8 16 16"/></svg>`;
+        }
+        if (mod.includes('left')) {
+          return `<svg viewBox="0 0 24 24"><line x1="18" y1="18" x2="8" y2="8"/><polyline points="16 8 8 8 8 16"/></svg>`;
+        }
+        return `<svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`;
+      }
+
+      // 4. Voice Guidance
+      let isVoiceMuted = localStorage.getItem('solarNavVoiceMuted') === 'true';
+      let lastSpokenKey = '';
+
+      function speakInstruction(text, key = '') {
+        if (isVoiceMuted || !('speechSynthesis' in window)) return;
+        if (key && key === lastSpokenKey) return;
+
+        lastSpokenKey = key;
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+
+      // 5. Normalization & Spatial Functions
+      function parseToLatLng(coord) {
+        if (!coord) return null;
+        return [Number(coord[0]), Number(coord[1])];
+      }
+
+      function haversineMeters(c1, c2) {
+        const R = 6371000;
+        const dLat = (c2[0] - c1[0]) * Math.PI / 180;
+        const dLon = (c2[1] - c1[1]) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(c1[0]*Math.PI/180) * Math.cos(c2[0]*Math.PI/180) * Math.sin(dLon/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
+
+      function distanceToSegment(p, a, b) {
+        const x = p[0], y = p[1];
+        const x1 = a[0], y1 = a[1];
+        const x2 = b[0], y2 = b[1];
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        if (dx === 0 && dy === 0) return haversineMeters(p, a);
+
+        let t = ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy);
+        t = Math.max(0, Math.min(1, t));
+        return haversineMeters(p, [x1 + t * dx, y1 + t * dy]);
+      }
+
+      function minDistanceToPolyline(point, polylineCoords) {
+        let minD = Infinity;
+        for (let i = 0; i < polylineCoords.length - 1; i++) {
+          const d = distanceToSegment(point, polylineCoords[i], polylineCoords[i + 1]);
+          if (d < minD) minD = d;
+        }
+        return minD;
+      }
+
+      function formatDistance(meters) {
+        if (!meters || meters <= 0) return '0 m';
+        if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
+        return `${Math.round(meters)} m`;
+      }
+
+      function cleanStreet(name) {
+        if (!name) return '';
+        const isCoord = /^[-+]?\d+(\.\d+)?[,\s]+[-+]?\d+(\.\d+)?$/.test(name.trim());
+        return isCoord ? '' : name.trim();
+      }
+
+      // 6. Navigation Session Setup
+      let navData = null;
+      let activePolyline = null;
+      let activeDestMarker = null;
+      let isRerouting = false;
+      let nextRerouteAt = 0;
+      let topHud = null;
+      let bottomHud = null;
+
+      const savedTrip = localStorage.getItem('activeSolarNavigation');
+      if (savedTrip) {
+        try {
+          navData = JSON.parse(savedTrip);
+          if (navData.coordinates) navData.coordinates = navData.coordinates.map(parseToLatLng);
+          if (navData.destinationCoords) navData.destinationCoords = parseToLatLng(navData.destinationCoords);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      function alignStepsWithPolyline() {
+        if (!navData || !navData.steps || !navData.coordinates) return;
+        const coords = navData.coordinates;
+
+        navData.steps.forEach((step, idx) => {
+          if (idx === 0) {
+            step.targetPolyIdx = 0;
+            return;
+          }
+          if (idx === navData.steps.length - 1) {
+            step.targetPolyIdx = coords.length - 1;
+            return;
+          }
+
+          if (step.location && step.location.length === 2) {
+            const stepLoc = parseToLatLng([step.location[1], step.location[0]]);
+            let bestIdx = 0;
+            let bestD = Infinity;
+            for (let c = 0; c < coords.length; c++) {
+              const d = haversineMeters(stepLoc, coords[c]);
+              if (d < bestD) {
+                bestD = d;
+                bestIdx = c;
+              }
+            }
+            step.targetPolyIdx = bestIdx;
+          } else {
+            step.targetPolyIdx = Math.min(Math.floor((idx / navData.steps.length) * coords.length), coords.length - 1);
+          }
+        });
+      }
+
+      function initHud() {
+        if (!navData || !navData.isActive || !navData.coordinates || navData.coordinates.length < 2) return;
+
+        alignStepsWithPolyline();
+
+        if (activePolyline) map.removeLayer(activePolyline);
+        if (activeDestMarker) map.removeLayer(activeDestMarker);
+
+        activePolyline = L.polyline(navData.coordinates, {
+          color: '#7075f8',
+          weight: 6,
+          opacity: 0.95
+        }).addTo(map);
+
+        activeDestMarker = L.circleMarker(navData.destinationCoords, {
+          radius: 8,
+          color: '#7075f8',
+          fillColor: '#ffffff',
+          fillOpacity: 1,
+          weight: 3
+        }).addTo(map);
+
+        if (!topHud) {
+          topHud = document.createElement('div');
+          topHud.className = 'nav-hud-top';
+          topHud.innerHTML = `
+            <div class="nav-maneuver-icon">${getSvgManeuverIcon('', '')}</div>
+            <div class="nav-direction-text">
+              <div class="nav-maneuver-title">Acquiring route track...</div>
+              <div class="nav-maneuver-sub">Calculating heading...</div>
+            </div>
+            <button id="navVoiceBtn" class="nav-voice-btn" title="Toggle Voice Guidance">
+              ${isVoiceMuted 
+                ? '<svg viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>' 
+                : '<svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>'
+              }
+            </button>
+          `;
+          mapContainer.parentElement.appendChild(topHud);
+
+          document.getElementById('navVoiceBtn').addEventListener('click', () => {
+            isVoiceMuted = !isVoiceMuted;
+            localStorage.setItem('solarNavVoiceMuted', isVoiceMuted);
+            document.getElementById('navVoiceBtn').innerHTML = isVoiceMuted 
+              ? '<svg viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>' 
+              : '<svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+          });
+        }
+
+        if (!bottomHud) {
+          bottomHud = document.createElement('div');
+          bottomHud.className = 'nav-hud-bottom';
+          bottomHud.innerHTML = `
+            <div class="nav-stats-col">
+              <span class="nav-eta">~${navData.durationMin} mins (${navData.distanceKm} km)</span>
+              <span class="nav-metrics">Net Solar Drain: ${navData.netBatteryDrain} kWh • Lead Vehicle</span>
+            </div>
+            <button id="exitNavBtn" class="nav-exit-btn">Exit Nav</button>
+          `;
+          mapContainer.parentElement.appendChild(bottomHud);
+
+          document.getElementById('exitNavBtn').addEventListener('click', () => {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            localStorage.removeItem('activeSolarNavigation');
+            if (topHud) topHud.remove();
+            if (bottomHud) bottomHud.remove();
+            topHud = null;
+            bottomHud = null;
+            if (activePolyline) map.removeLayer(activePolyline);
+            if (activeDestMarker) map.removeLayer(activeDestMarker);
+            navData = null;
+            map.setView([fallbackLat, fallbackLng], 14);
+          });
+        }
+      }
+
+      initHud();
+
+      // 7. Bulletproof Real-Time Navigation Guidance
+      function updateNavigationGuidance(rawPos) {
+        if (!navData || !navData.isActive || !topHud || isRerouting) return;
+        const currentPos = parseToLatLng(rawPos);
+        if (!currentPos) return;
+
+        const coords = navData.coordinates;
+        const distToDest = haversineMeters(currentPos, navData.destinationCoords);
+
+        if (distToDest < 35) {
+          topHud.querySelector('.nav-maneuver-icon').innerHTML = getSvgManeuverIcon('', 'arrive');
+          topHud.querySelector('.nav-maneuver-title').textContent = 'You have arrived at your destination';
+          topHud.querySelector('.nav-maneuver-sub').innerHTML = '🏁 Arrived • <span>Trip Complete</span>';
+          speakInstruction('You have arrived at your destination', 'arrived');
+          return;
+        }
+
+        const offRouteDist = minDistanceToPolyline(currentPos, coords);
+        if (offRouteDist > 50) {
+          if (Date.now() >= nextRerouteAt) {
+            triggerRealtimeReroute(currentPos);
+          } else {
+            const seconds = Math.ceil((nextRerouteAt - Date.now()) / 1000);
+            topHud.querySelector('.nav-maneuver-sub').textContent = `Off route · retrying in ${seconds}s`;
+          }
+          return;
+        }
+
+        let currentPolyIdx = 0;
+        let minD = Infinity;
+        for (let i = 0; i < coords.length; i++) {
+          const d = haversineMeters(currentPos, coords[i]);
+          if (d < minD) {
+            minD = d;
+            currentPolyIdx = i;
+          }
+        }
+
+        const steps = navData.steps || [];
+        let nextStep = null;
+
+        for (let s = 0; s < steps.length; s++) {
+          const step = steps[s];
+          if (step.targetPolyIdx > currentPolyIdx + 1) {
+            nextStep = step;
+            break;
+          }
+        }
+
+        if (!nextStep) {
+          nextStep = steps[steps.length - 1] || { name: 'Destination', type: 'arrive', targetPolyIdx: coords.length - 1 };
+        }
+
+        let distMeters = haversineMeters(currentPos, coords[currentPolyIdx]);
+        for (let k = currentPolyIdx; k < nextStep.targetPolyIdx && k < coords.length - 1; k++) {
+          distMeters += haversineMeters(coords[k], coords[k + 1]);
+        }
+
+        const turnDistDisp = formatDistance(distMeters);
+        const turnRoad = cleanStreet(nextStep.name);
+        const mod = (nextStep.modifier || '').toLowerCase();
+        const type = (nextStep.type || '').toLowerCase();
+
+        let actionPhrase = 'continue straight';
+        if (type === 'arrive') actionPhrase = 'arrive at destination';
+        else if (mod.includes('sharp left')) actionPhrase = 'take a sharp left';
+        else if (mod.includes('slight left')) actionPhrase = 'bear left';
+        else if (mod.includes('left')) actionPhrase = 'turn left';
+        else if (mod.includes('sharp right')) actionPhrase = 'take a sharp right';
+        else if (mod.includes('slight right')) actionPhrase = 'bear right';
+        else if (mod.includes('right')) actionPhrase = 'turn right';
+        else if (mod.includes('u-turn')) actionPhrase = 'make a U-turn';
+        else if (type.includes('roundabout')) actionPhrase = 'take exit at roundabout';
+
+        const roadTarget = turnRoad ? ` onto ${turnRoad}` : '';
+        const titleText = (type === 'arrive') 
+          ? `In ${turnDistDisp}, arrive at destination` 
+          : `In ${turnDistDisp}, ${actionPhrase}${roadTarget}`;
+
+        topHud.querySelector('.nav-maneuver-icon').innerHTML = getSvgManeuverIcon(nextStep.modifier, nextStep.type);
+        topHud.querySelector('.nav-maneuver-title').textContent = titleText;
+        topHud.querySelector('.nav-maneuver-sub').innerHTML = `Next Turn: in ${turnDistDisp} • <span>Lead Vehicle Priority</span>`;
+
+        if (distMeters <= 500 && distMeters > 430) {
+          speakInstruction(`In 500 meters, ${actionPhrase}${roadTarget}`, `voice_500_${turnRoad}`);
+        } else if (distMeters <= 200 && distMeters > 140) {
+          speakInstruction(`In 200 meters, ${actionPhrase}${roadTarget}`, `voice_200_${turnRoad}`);
+        } else if (distMeters <= 55 && distMeters > 15) {
+          speakInstruction(`${actionPhrase.charAt(0).toUpperCase() + actionPhrase.slice(1)}${roadTarget}`, `voice_now_${turnRoad}`);
+        }
+      }
+
+      // 8. Rerouting Engine
+      async function triggerRealtimeReroute(currentPos) {
+        if (isRerouting) return;
+        isRerouting = true;
+        nextRerouteAt = Date.now() + 30000;
+
+        topHud.classList.add('rerouting');
+        topHud.querySelector('.nav-maneuver-icon').innerHTML = `<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><polyline points="21 3 21 9 15 9"/></svg>`;
+        topHud.querySelector('.nav-maneuver-title').textContent = 'Recalculating route...';
+        topHud.querySelector('.nav-maneuver-sub').textContent = 'Finding optimal solar path';
+        speakInstruction('Recalculating route', 'reroute_notice');
+
+        try {
+          const res = await fetch('/api/calculate-solar-route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              startLat: currentPos[0],
+              startLng: currentPos[1],
+              destination: `${navData.destinationCoords[0]}, ${navData.destinationCoords[1]}`,
+              headwind: 12
+            })
+          });
+
+          const data = await res.json();
+          if (data.success && data.routes && data.routes.length > 0) {
+            const newRoute = data.routes[0];
+
+            navData.coordinates = (newRoute.coordinates || []).map(parseToLatLng);
+            navData.steps = newRoute.steps || [];
+            navData.distanceKm = newRoute.distanceKm;
+            navData.durationMin = newRoute.durationMin;
+            navData.netBatteryDrain = newRoute.netBatteryDrain;
+
+            alignStepsWithPolyline();
+            localStorage.setItem('activeSolarNavigation', JSON.stringify(navData));
+            activePolyline.setLatLngs(navData.coordinates);
+
+            if (bottomHud) {
+              bottomHud.querySelector('.nav-eta').textContent = `~${navData.durationMin} mins (${navData.distanceKm} km)`;
+              bottomHud.querySelector('.nav-metrics').textContent = `Net Solar Drain: ${navData.netBatteryDrain} kWh • Lead Vehicle`;
+            }
+
+            speakInstruction('New route locked. Continue straight.', 'reroute_success');
+          }
+        } catch (err) {
+          console.warn('Rerouting error:', err);
+        } finally {
+          topHud.classList.remove('rerouting');
+          isRerouting = false;
+        }
+      }
+
+      // 9. Built-in Simulation Driver
+      const simBtn = document.getElementById('simulateDriveBtn');
+      let simInterval = null;
+
+      if (simBtn) simBtn.addEventListener('click', () => {
+        if (simInterval) {
+          clearInterval(simInterval);
+          simInterval = null;
+          simBtn.textContent = '▶ Resume Drive';
+          return;
+        }
+
+        const trackToDrive = (navData && navData.coordinates && navData.coordinates.length > 1) 
+          ? navData.coordinates 
+          : [[-25.7479, 28.2293], [-25.7510, 28.2310], [-25.7540, 28.2330], [-25.7580, 28.2350], [-25.7680, 28.2375]];
+
+        let idx = 0;
+        let cumulativeKm = 0;
+        simBtn.textContent = '⏸ Pause Drive';
+
+        const gpsEl = document.querySelector('[data-value="gps"]');
+        const speedEl = document.querySelector('[data-value="speed"]');
+        const distEl = document.querySelector('[data-value="distance"]');
+
+        simInterval = setInterval(() => {
+          if (idx >= trackToDrive.length) {
+            clearInterval(simInterval);
+            simInterval = null;
+            simBtn.textContent = '↺ Restart Drive';
+            if (speedEl) speedEl.textContent = '0';
+            return;
+          }
+
+          const currentPos = trackToDrive[idx];
+          carMarker.setLatLng(currentPos);
+
+          if (gpsEl) gpsEl.textContent = `${currentPos[0].toFixed(5)}, ${currentPos[1].toFixed(5)}`;
+          if (idx > 0) {
+            cumulativeKm += haversineMeters(trackToDrive[idx - 1], currentPos) / 1000;
+          }
+          if (distEl) distEl.textContent = cumulativeKm.toFixed(1);
+          if (speedEl) speedEl.textContent = (idx === trackToDrive.length - 1) ? '0' : Math.round(52 + (Math.random() * 6));
+
+          // Run real-time navigation calculations
+          updateNavigationGuidance(currentPos);
+
+          idx++;
+        }, 900);
+      });
+
+      // 10. GPS Mutation Observer for external sensor data
+      const gpsObserver = new MutationObserver(() => {
+        const gpsEl = document.querySelector('[data-value="gps"]');
+        if (!gpsEl) return;
+        const lat = Number(gpsEl.dataset.latitude);
+        const lng = Number(gpsEl.dataset.longitude);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          const pos = parseToLatLng([lat, lng]);
+          carMarker.setLatLng(pos);
+          if (navData && navData.isActive && document.body.dataset.routeSimulation !== 'idle') {
+            map.panTo(pos, { animate: false });
+            updateNavigationGuidance(pos);
+          }
+        }
+      });
+
+      const gpsElement = document.querySelector('[data-value="gps"]');
+      if (gpsElement) {
+        gpsObserver.observe(gpsElement, {
+          attributes: true,
+          attributeFilter: ['data-latitude', 'data-longitude'],
+        });
+      }
+    });
+  </script>
+</body>
+</html>   but this into the dashboard.ejs and see if this works

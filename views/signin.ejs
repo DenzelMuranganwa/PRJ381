@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Sign In | IWOS Field</title>
+  <link rel="stylesheet" href="/css.css">
+</head>
+<body class="auth-page" data-theme="dark">
+  <main class="auth-shell">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <a class="auth-brand" href="/signin" aria-label="IWOS Field sign in">
+        <span class="brand-square"></span><span class="badge-text">IWOS FIELD</span>
+      </a>
+      <a class="auth-back-link" href="/dashboard" aria-label="Back to Dashboard"><span aria-hidden="true">←</span> Back to Dashboard</a>
+      <div class="auth-heading">
+        <span class="auth-eyebrow">TELEMETRY CONTROL</span>
+        <h1 id="auth-title">Welcome back</h1>
+        <p>Sign in to access your vehicle dashboard.</p>
+      </div>
+      <% if (error) { %><p class="auth-alert" role="alert"><%= error %></p><% } %>
+      <form class="auth-form" method="post" action="/signin">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" autocomplete="email" maxlength="254" value="<%= email %>" required>
+        <label for="password">Password</label>
+        <div class="password-field">
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" class="password-toggle" data-password-toggle="password" aria-label="Show password">Show</button>
+        </div>
+        <button class="auth-submit" type="submit">Sign In</button>
+      </form>
+      <p class="auth-switch">New to IWOS? <a href="/register">Create an account</a></p>
+    </section>
+  </main>
+  <script src="/auth.js" defer></script>
+</body>
+</html>

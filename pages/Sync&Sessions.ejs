@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>IWOS Field - Sync &amp; Logs</title><link rel="stylesheet" href="/css.css"></head>
+<body data-theme="<%= themePreference %>" data-authenticated="<%= currentUser ? 'true' : 'false' %>">
+<%- include('../partials/header', {activePage:'sync', pageTitle:'Sync & Logs'}) %>
+<div class="app-main-layout"><main class="page-container">
+<section class="telemetry-section">
+  <h3 class="section-title">SENSOR CONNECTION &amp; RECEIVED DATA</h3>
+  <div class="sensor-status-row" role="status"><span class="sensor-pill" data-feed-state>Waiting</span><span data-feed-detail>Connecting to dashboard…</span></div>
+  <div class="telemetry-cards-row">
+    <% [['accepted','Weather packets','val-green'],['rejected','Rejected packets','val-red'],['duplicates','Duplicate packets','val-amber'],['buffer','History in memory','val-cyan']].forEach(([key,label,color])=>{ %>
+    <article class="feed-card"><div class="card-label"><%= label %></div><div class="card-metric"><span class="val <%= color %>" data-count="<%= key %>">—</span></div></article>
+    <% }); %>
+  </div>
+  <p class="sensor-method">Counts cover this server session. Up to 120 weather readings are kept in memory; restarting clears them. The station's CSV remains the durable record. MQTT acknowledgements and network latency are not measured here.</p>
+</section>
+<section class="telemetry-section sensor-live-log">
+  <h3 class="section-title">LATEST MEASURED READINGS</h3>
+  <div class="table-container sensor-table-scroll"><table class="iwos-table">
+  <thead><tr><th>OBSERVED TIME</th><th>TEMP °C</th><th>HUMIDITY %</th><th>PRESSURE hPa</th><th>WIND km/h</th><th>SOURCE</th></tr></thead>
+  <tbody id="sensor-log-body"><tr><td colspan="6">Waiting for sensor readings.</td></tr></tbody>
+  </table></div>
+</section>
+</main></div>
+<%- include('../partials/footer') %>
+</body></html>

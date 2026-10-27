@@ -1,0 +1,3842 @@
+[
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 1,
+      "battery": 19,
+      "speed": 90
+    },
+    "speed": 58,
+    "efficiency": 45.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 2,
+      "battery": 60,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 41.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 0,
+      "battery": 0,
+      "speed": 120
+    },
+    "speed": 61,
+    "efficiency": 63.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 2,
+      "battery": 40,
+      "speed": 60
+    },
+    "speed": 59,
+    "efficiency": 81.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 3,
+      "battery": 40,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 43.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 1,
+      "battery": 25,
+      "speed": 120
+    },
+    "speed": 60,
+    "efficiency": 40.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 0,
+      "battery": 60,
+      "speed": 90
+    },
+    "speed": 78,
+    "efficiency": 85.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 3,
+      "battery": 44,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 35.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 1,
+      "battery": 0,
+      "speed": 0
+    },
+    "speed": 46,
+    "efficiency": 32.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 2,
+      "battery": 100,
+      "speed": 60
+    },
+    "speed": 57,
+    "efficiency": 70.0,
+    "batteryMode": "Performance",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 0,
+      "battery": 25,
+      "speed": 60
+    },
+    "speed": 84,
+    "efficiency": 78.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 3,
+      "battery": 70,
+      "speed": 100
+    },
+    "speed": 55,
+    "efficiency": 55.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 299,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 3,
+      "battery": 20,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 1.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 0,
+      "rain": 1,
+      "battery": 0,
+      "speed": 90
+    },
+    "speed": 60,
+    "efficiency": 55.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 0,
+      "rain": 2,
+      "battery": 80,
+      "speed": 90
+    },
+    "speed": 57,
+    "efficiency": 55.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 60,
+      "speed": 0
+    },
+    "speed": 62,
+    "efficiency": 55.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 1,
+      "battery": 0,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 35.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 1,
+      "battery": 80,
+      "speed": 0
+    },
+    "speed": 69,
+    "efficiency": 59.0,
+    "batteryMode": "Performance",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 0,
+      "battery": 80,
+      "speed": 60
+    },
+    "speed": 89,
+    "efficiency": 74.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 2,
+      "battery": 20,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 32.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 59,
+      "speed": 100
+    },
+    "speed": 70,
+    "efficiency": 68.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 2,
+      "battery": 70,
+      "speed": 90
+    },
+    "speed": 66,
+    "efficiency": 71.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 0,
+      "battery": 19,
+      "speed": 0
+    },
+    "speed": 52,
+    "efficiency": 40.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 3,
+      "battery": 0,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 14.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 2,
+      "battery": 45,
+      "speed": 100
+    },
+    "speed": 49,
+    "efficiency": 35.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 3,
+      "battery": 80,
+      "speed": 0
+    },
+    "speed": 54,
+    "efficiency": 55.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 0,
+      "battery": 100,
+      "speed": 0
+    },
+    "speed": 70,
+    "efficiency": 55.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 2,
+      "battery": 70,
+      "speed": 100
+    },
+    "speed": 61,
+    "efficiency": 80.0,
+    "batteryMode": "Performance",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 0,
+      "battery": 59,
+      "speed": 120
+    },
+    "speed": 79,
+    "efficiency": 75.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 0,
+      "battery": 20,
+      "speed": 0
+    },
+    "speed": 62,
+    "efficiency": 55.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 3,
+      "battery": 25,
+      "speed": 0
+    },
+    "speed": 46,
+    "efficiency": 32.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 3,
+      "battery": 0,
+      "speed": 90
+    },
+    "speed": 45,
+    "efficiency": 30.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 2,
+      "battery": 60,
+      "speed": 90
+    },
+    "speed": 54,
+    "efficiency": 58.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 3,
+      "battery": 60,
+      "speed": 120
+    },
+    "speed": 49,
+    "efficiency": 51.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 2,
+      "battery": 45,
+      "speed": 90
+    },
+    "speed": 52,
+    "efficiency": 56.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 0,
+      "battery": 80,
+      "speed": 60
+    },
+    "speed": 87,
+    "efficiency": 73.0,
+    "batteryMode": "Performance",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 19,
+      "speed": 120
+    },
+    "speed": 59,
+    "efficiency": 55.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 2,
+      "battery": 39,
+      "speed": 60
+    },
+    "speed": 56,
+    "efficiency": 63.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 1,
+      "battery": 70,
+      "speed": 0
+    },
+    "speed": 55,
+    "efficiency": 45.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 0,
+      "rain": 2,
+      "battery": 100,
+      "speed": 0
+    },
+    "speed": 76,
+    "efficiency": 76.0,
+    "batteryMode": "Performance",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 0,
+      "battery": 80,
+      "speed": 100
+    },
+    "speed": 62,
+    "efficiency": 48.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 0,
+      "battery": 100,
+      "speed": 100
+    },
+    "speed": 72,
+    "efficiency": 55.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 1,
+      "battery": 80,
+      "speed": 100
+    },
+    "speed": 55,
+    "efficiency": 39.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 1,
+      "battery": 0,
+      "speed": 120
+    },
+    "speed": 46,
+    "efficiency": 32.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 1,
+      "battery": 39,
+      "speed": 120
+    },
+    "speed": 45,
+    "efficiency": 25.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 2,
+      "battery": 60,
+      "speed": 120
+    },
+    "speed": 52,
+    "efficiency": 53.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 0,
+      "battery": 40,
+      "speed": 90
+    },
+    "speed": 71,
+    "efficiency": 88.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 0,
+      "battery": 25,
+      "speed": 90
+    },
+    "speed": 59,
+    "efficiency": 43.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 0,
+      "battery": 44,
+      "speed": 120
+    },
+    "speed": 59,
+    "efficiency": 61.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 299,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 2,
+      "battery": 60,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 27.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 1,
+      "battery": 20,
+      "speed": 90
+    },
+    "speed": 64,
+    "efficiency": 59.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 3,
+      "battery": 60,
+      "speed": 60
+    },
+    "speed": 49,
+    "efficiency": 57.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 3,
+      "battery": 80,
+      "speed": 0
+    },
+    "speed": 62,
+    "efficiency": 62.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 0,
+      "speed": 100
+    },
+    "speed": 50,
+    "efficiency": 55.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 0,
+      "battery": 40,
+      "speed": 0
+    },
+    "speed": 74,
+    "efficiency": 76.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 2,
+      "battery": 59,
+      "speed": 100
+    },
+    "speed": 64,
+    "efficiency": 62.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 1,
+      "battery": 44,
+      "speed": 60
+    },
+    "speed": 66,
+    "efficiency": 81.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 2,
+      "battery": 20,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 59.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 2,
+      "battery": 44,
+      "speed": 0
+    },
+    "speed": 55,
+    "efficiency": 65.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 299,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 0,
+      "battery": 80,
+      "speed": 60
+    },
+    "speed": 69,
+    "efficiency": 64.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 1,
+      "battery": 60,
+      "speed": 100
+    },
+    "speed": 67,
+    "efficiency": 62.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 2,
+      "battery": 44,
+      "speed": 90
+    },
+    "speed": 45,
+    "efficiency": 45.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 3,
+      "battery": 20,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 43.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 3,
+      "battery": 60,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 25.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 0,
+      "battery": 80,
+      "speed": 0
+    },
+    "speed": 65,
+    "efficiency": 54.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 1,
+      "battery": 60,
+      "speed": 60
+    },
+    "speed": 71,
+    "efficiency": 82.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 45,
+      "speed": 0
+    },
+    "speed": 65,
+    "efficiency": 68.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 2,
+      "battery": 25,
+      "speed": 90
+    },
+    "speed": 45,
+    "efficiency": 36.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 2,
+      "battery": 80,
+      "speed": 90
+    },
+    "speed": 52,
+    "efficiency": 67.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 2,
+      "battery": 20,
+      "speed": 90
+    },
+    "speed": 45,
+    "efficiency": 35.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 3,
+      "battery": 80,
+      "speed": 0
+    },
+    "speed": 64,
+    "efficiency": 49.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 0,
+      "battery": 40,
+      "speed": 60
+    },
+    "speed": 64,
+    "efficiency": 73.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 299,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 2,
+      "battery": 70,
+      "speed": 60
+    },
+    "speed": 54,
+    "efficiency": 59.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 0,
+      "battery": 60,
+      "speed": 120
+    },
+    "speed": 70,
+    "efficiency": 54.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 1,
+      "battery": 80,
+      "speed": 90
+    },
+    "speed": 79,
+    "efficiency": 89.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 1,
+      "battery": 59,
+      "speed": 60
+    },
+    "speed": 67,
+    "efficiency": 87.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 3,
+      "battery": 59,
+      "speed": 90
+    },
+    "speed": 68,
+    "efficiency": 52.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 3,
+      "battery": 59,
+      "speed": 90
+    },
+    "speed": 66,
+    "efficiency": 62.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 3,
+      "battery": 44,
+      "speed": 0
+    },
+    "speed": 51,
+    "efficiency": 65.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 299,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 3,
+      "battery": 70,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 24.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 3,
+      "battery": 20,
+      "speed": 90
+    },
+    "speed": 45,
+    "efficiency": 41.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 3,
+      "battery": 80,
+      "speed": 60
+    },
+    "speed": 67,
+    "efficiency": 67.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 1,
+      "battery": 80,
+      "speed": 0
+    },
+    "speed": 64,
+    "efficiency": 60.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 0,
+      "battery": 19,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 21.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 0,
+      "battery": 44,
+      "speed": 90
+    },
+    "speed": 79,
+    "efficiency": 86.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 3,
+      "battery": 45,
+      "speed": 120
+    },
+    "speed": 65,
+    "efficiency": 55.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 0,
+      "battery": 19,
+      "speed": 120
+    },
+    "speed": 53,
+    "efficiency": 44.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 1,
+      "battery": 39,
+      "speed": 0
+    },
+    "speed": 61,
+    "efficiency": 57.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 1,
+      "battery": 100,
+      "speed": 0
+    },
+    "speed": 54,
+    "efficiency": 42.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 3,
+      "battery": 80,
+      "speed": 100
+    },
+    "speed": 54,
+    "efficiency": 48.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 299,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 1,
+      "battery": 45,
+      "speed": 100
+    },
+    "speed": 47,
+    "efficiency": 29.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 0,
+      "battery": 100,
+      "speed": 60
+    },
+    "speed": 89,
+    "efficiency": 88.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 3,
+      "battery": 80,
+      "speed": 100
+    },
+    "speed": 52,
+    "efficiency": 51.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 0,
+      "battery": 19,
+      "speed": 60
+    },
+    "speed": 62,
+    "efficiency": 67.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 1,
+      "battery": 45,
+      "speed": 120
+    },
+    "speed": 59,
+    "efficiency": 46.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 0,
+      "battery": 100,
+      "speed": 90
+    },
+    "speed": 62,
+    "efficiency": 62.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 0,
+      "battery": 0,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 41.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 3,
+      "battery": 19,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 30.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 0,
+      "battery": 45,
+      "speed": 90
+    },
+    "speed": 69,
+    "efficiency": 48.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 0,
+      "battery": 80,
+      "speed": 90
+    },
+    "speed": 62,
+    "efficiency": 61.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 3,
+      "battery": 40,
+      "speed": 100
+    },
+    "speed": 50,
+    "efficiency": 44.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 2,
+      "battery": 0,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 39.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 2,
+      "battery": 60,
+      "speed": 100
+    },
+    "speed": 59,
+    "efficiency": 59.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 2,
+      "battery": 100,
+      "speed": 60
+    },
+    "speed": 63,
+    "efficiency": 66.0,
+    "batteryMode": "Performance",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 2,
+      "battery": 80,
+      "speed": 90
+    },
+    "speed": 59,
+    "efficiency": 57.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 1,
+      "battery": 59,
+      "speed": 100
+    },
+    "speed": 59,
+    "efficiency": 63.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 1,
+      "battery": 100,
+      "speed": 100
+    },
+    "speed": 71,
+    "efficiency": 62.0,
+    "batteryMode": "Performance",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 2,
+      "battery": 20,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 55.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 2,
+      "battery": 44,
+      "speed": 60
+    },
+    "speed": 51,
+    "efficiency": 77.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 3,
+      "battery": 44,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 47.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 2,
+      "battery": 70,
+      "speed": 0
+    },
+    "speed": 52,
+    "efficiency": 55.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 2,
+      "battery": 40,
+      "speed": 120
+    },
+    "speed": 52,
+    "efficiency": 75.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 3,
+      "battery": 80,
+      "speed": 0
+    },
+    "speed": 61,
+    "efficiency": 55.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 1,
+      "battery": 100,
+      "speed": 120
+    },
+    "speed": 66,
+    "efficiency": 59.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 1,
+      "battery": 80,
+      "speed": 120
+    },
+    "speed": 62,
+    "efficiency": 45.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 3,
+      "battery": 100,
+      "speed": 90
+    },
+    "speed": 49,
+    "efficiency": 43.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 1,
+      "battery": 24,
+      "speed": 90
+    },
+    "speed": 51,
+    "efficiency": 65.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 1,
+      "battery": 45,
+      "speed": 120
+    },
+    "speed": 54,
+    "efficiency": 48.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 0,
+      "battery": 0,
+      "speed": 0
+    },
+    "speed": 60,
+    "efficiency": 53.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 2,
+      "battery": 100,
+      "speed": 90
+    },
+    "speed": 50,
+    "efficiency": 52.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 0,
+      "battery": 0,
+      "speed": 0
+    },
+    "speed": 49,
+    "efficiency": 17.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 0,
+      "battery": 70,
+      "speed": 0
+    },
+    "speed": 76,
+    "efficiency": 81.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 3,
+      "battery": 44,
+      "speed": 120
+    },
+    "speed": 52,
+    "efficiency": 53.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 2,
+      "battery": 60,
+      "speed": 60
+    },
+    "speed": 52,
+    "efficiency": 82.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 2,
+      "battery": 40,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 56.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 2,
+      "battery": 25,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 17.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 3,
+      "battery": 44,
+      "speed": 90
+    },
+    "speed": 45,
+    "efficiency": 38.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 0,
+      "battery": 0,
+      "speed": 60
+    },
+    "speed": 50,
+    "efficiency": 44.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 3,
+      "battery": 100,
+      "speed": 120
+    },
+    "speed": 45,
+    "efficiency": 37.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 0,
+      "battery": 24,
+      "speed": 120
+    },
+    "speed": 52,
+    "efficiency": 35.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 3,
+      "battery": 39,
+      "speed": 120
+    },
+    "speed": 53,
+    "efficiency": 37.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 0,
+      "battery": 40,
+      "speed": 0
+    },
+    "speed": 67,
+    "efficiency": 70.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 3,
+      "battery": 60,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 30.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 25,
+      "speed": 60
+    },
+    "speed": 52,
+    "efficiency": 62.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 2,
+      "battery": 45,
+      "speed": 60
+    },
+    "speed": 59,
+    "efficiency": 72.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 1,
+      "battery": 24,
+      "speed": 0
+    },
+    "speed": 50,
+    "efficiency": 61.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 0,
+      "battery": 60,
+      "speed": 0
+    },
+    "speed": 64,
+    "efficiency": 40.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 3,
+      "battery": 59,
+      "speed": 120
+    },
+    "speed": 47,
+    "efficiency": 45.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 3,
+      "battery": 59,
+      "speed": 90
+    },
+    "speed": 52,
+    "efficiency": 40.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 1,
+      "battery": 40,
+      "speed": 120
+    },
+    "speed": 47,
+    "efficiency": 55.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 3,
+      "battery": 25,
+      "speed": 0
+    },
+    "speed": 51,
+    "efficiency": 48.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 1,
+      "battery": 59,
+      "speed": 120
+    },
+    "speed": 57,
+    "efficiency": 48.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 59,
+      "speed": 60
+    },
+    "speed": 69,
+    "efficiency": 77.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 3,
+      "battery": 24,
+      "speed": 90
+    },
+    "speed": 49,
+    "efficiency": 55.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 0,
+      "rain": 1,
+      "battery": 100,
+      "speed": 60
+    },
+    "speed": 72,
+    "efficiency": 77.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 1,
+      "battery": 60,
+      "speed": 0
+    },
+    "speed": 62,
+    "efficiency": 53.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 1,
+      "battery": 25,
+      "speed": 90
+    },
+    "speed": 57,
+    "efficiency": 53.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 0,
+      "battery": 20,
+      "speed": 120
+    },
+    "speed": 78,
+    "efficiency": 76.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 3,
+      "battery": 40,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 38.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 3,
+      "battery": 19,
+      "speed": 60
+    },
+    "speed": 46,
+    "efficiency": 54.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 2,
+      "battery": 45,
+      "speed": 60
+    },
+    "speed": 56,
+    "efficiency": 58.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 2,
+      "battery": 24,
+      "speed": 120
+    },
+    "speed": 45,
+    "efficiency": 36.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 0,
+      "battery": 40,
+      "speed": 90
+    },
+    "speed": 47,
+    "efficiency": 28.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 3,
+      "battery": 100,
+      "speed": 120
+    },
+    "speed": 57,
+    "efficiency": 62.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 0,
+      "battery": 100,
+      "speed": 90
+    },
+    "speed": 88,
+    "efficiency": 100,
+    "batteryMode": "Performance",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 2,
+      "battery": 80,
+      "speed": 0
+    },
+    "speed": 62,
+    "efficiency": 62.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 2,
+      "battery": 19,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 22.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 2,
+      "battery": 20,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 53.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 3,
+      "battery": 59,
+      "speed": 0
+    },
+    "speed": 69,
+    "efficiency": 65.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 1,
+      "battery": 39,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 25.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 3,
+      "battery": 24,
+      "speed": 120
+    },
+    "speed": 45,
+    "efficiency": 37.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 1,
+      "battery": 44,
+      "speed": 120
+    },
+    "speed": 45,
+    "efficiency": 22.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 3,
+      "battery": 0,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 11.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 299,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 1,
+      "battery": 40,
+      "speed": 120
+    },
+    "speed": 57,
+    "efficiency": 50.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 1,
+      "battery": 44,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 34.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 0,
+      "battery": 100,
+      "speed": 60
+    },
+    "speed": 84,
+    "efficiency": 86.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 2,
+      "battery": 0,
+      "speed": 120
+    },
+    "speed": 45,
+    "efficiency": 21.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 1,
+      "battery": 59,
+      "speed": 90
+    },
+    "speed": 80,
+    "efficiency": 79.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 0,
+      "battery": 100,
+      "speed": 0
+    },
+    "speed": 87,
+    "efficiency": 75.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 3,
+      "battery": 0,
+      "speed": 0
+    },
+    "speed": 50,
+    "efficiency": 39.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 2,
+      "battery": 20,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 50.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 2,
+      "battery": 0,
+      "speed": 120
+    },
+    "speed": 45,
+    "efficiency": 41.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 1,
+      "battery": 25,
+      "speed": 60
+    },
+    "speed": 56,
+    "efficiency": 62.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 2,
+      "battery": 59,
+      "speed": 0
+    },
+    "speed": 59,
+    "efficiency": 60.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 2,
+      "battery": 19,
+      "speed": 120
+    },
+    "speed": 45,
+    "efficiency": 28.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 2,
+      "battery": 20,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 54.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 1,
+      "battery": 20,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 59.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 0,
+      "battery": 100,
+      "speed": 60
+    },
+    "speed": 69,
+    "efficiency": 74.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 3,
+      "battery": 40,
+      "speed": 90
+    },
+    "speed": 45,
+    "efficiency": 47.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 2,
+      "battery": 100,
+      "speed": 90
+    },
+    "speed": 69,
+    "efficiency": 79.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 300,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 3,
+      "battery": 60,
+      "speed": 0
+    },
+    "speed": 47,
+    "efficiency": 43.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 25,
+      "rain": 2,
+      "battery": 60,
+      "speed": 120
+    },
+    "speed": 52,
+    "efficiency": 55.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 3,
+      "battery": 60,
+      "speed": 120
+    },
+    "speed": 61,
+    "efficiency": 63.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 1,
+      "battery": 25,
+      "speed": 120
+    },
+    "speed": 61,
+    "efficiency": 44.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 100,
+      "speed": 0
+    },
+    "speed": 76,
+    "efficiency": 68.0,
+    "batteryMode": "Performance",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 1,
+      "battery": 39,
+      "speed": 90
+    },
+    "speed": 66,
+    "efficiency": 62.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 0,
+      "battery": 40,
+      "speed": 0
+    },
+    "speed": 83,
+    "efficiency": 80.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 0,
+      "rain": 1,
+      "battery": 24,
+      "speed": 90
+    },
+    "speed": 47,
+    "efficiency": 53.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 0,
+      "rain": 0,
+      "battery": 40,
+      "speed": 0
+    },
+    "speed": 72,
+    "efficiency": 58.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 2,
+      "battery": 59,
+      "speed": 100
+    },
+    "speed": 61,
+    "efficiency": 60.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 2,
+      "battery": 100,
+      "speed": 100
+    },
+    "speed": 61,
+    "efficiency": 59.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 1,
+      "battery": 24,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 37.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 0,
+      "rain": 1,
+      "battery": 25,
+      "speed": 0
+    },
+    "speed": 69,
+    "efficiency": 58.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 0,
+      "battery": 70,
+      "speed": 120
+    },
+    "speed": 69,
+    "efficiency": 48.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 1,
+      "battery": 39,
+      "speed": 0
+    },
+    "speed": 58,
+    "efficiency": 60.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 0,
+      "battery": 59,
+      "speed": 0
+    },
+    "speed": 80,
+    "efficiency": 71.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 2,
+      "battery": 0,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 40.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 2,
+      "battery": 59,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 44.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 1,
+      "battery": 80,
+      "speed": 90
+    },
+    "speed": 52,
+    "efficiency": 34.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 3,
+      "battery": 25,
+      "speed": 120
+    },
+    "speed": 51,
+    "efficiency": 41.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 0,
+      "battery": 39,
+      "speed": 90
+    },
+    "speed": 66,
+    "efficiency": 71.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 3,
+      "battery": 0,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 39.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 1,
+      "battery": 20,
+      "speed": 120
+    },
+    "speed": 51,
+    "efficiency": 50.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 2,
+      "battery": 45,
+      "speed": 120
+    },
+    "speed": 55,
+    "efficiency": 48.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 39,
+      "speed": 0
+    },
+    "speed": 68,
+    "efficiency": 61.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 0,
+      "battery": 44,
+      "speed": 100
+    },
+    "speed": 62,
+    "efficiency": 68.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 1,
+      "battery": 100,
+      "speed": 100
+    },
+    "speed": 62,
+    "efficiency": 52.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 1,
+      "battery": 60,
+      "speed": 120
+    },
+    "speed": 67,
+    "efficiency": 72.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 0,
+      "battery": 80,
+      "speed": 90
+    },
+    "speed": 83,
+    "efficiency": 80.0,
+    "batteryMode": "Performance",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 0,
+      "battery": 19,
+      "speed": 0
+    },
+    "speed": 53,
+    "efficiency": 36.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 3,
+      "battery": 100,
+      "speed": 120
+    },
+    "speed": 49,
+    "efficiency": 47.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 1,
+      "battery": 25,
+      "speed": 120
+    },
+    "speed": 49,
+    "efficiency": 35.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 1,
+      "battery": 60,
+      "speed": 60
+    },
+    "speed": 66,
+    "efficiency": 77.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 2,
+      "battery": 45,
+      "speed": 60
+    },
+    "speed": 50,
+    "efficiency": 70.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 299,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 2,
+      "battery": 0,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 23.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 2,
+      "battery": 25,
+      "speed": 120
+    },
+    "speed": 55,
+    "efficiency": 46.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 1,
+      "battery": 20,
+      "speed": 120
+    },
+    "speed": 45,
+    "efficiency": 43.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 1,
+      "battery": 59,
+      "speed": 60
+    },
+    "speed": 79,
+    "efficiency": 73.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 800,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 2,
+      "battery": 39,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 29.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 1,
+      "battery": 19,
+      "speed": 0
+    },
+    "speed": 51,
+    "efficiency": 34.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 2,
+      "battery": 45,
+      "speed": 120
+    },
+    "speed": 54,
+    "efficiency": 54.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 1,
+      "battery": 44,
+      "speed": 90
+    },
+    "speed": 60,
+    "efficiency": 71.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 2,
+      "battery": 60,
+      "speed": 100
+    },
+    "speed": 49,
+    "efficiency": 50.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 299,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 0,
+      "battery": 20,
+      "speed": 120
+    },
+    "speed": 47,
+    "efficiency": 34.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 3,
+      "battery": 60,
+      "speed": 60
+    },
+    "speed": 59,
+    "efficiency": 74.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 1,
+      "battery": 59,
+      "speed": 0
+    },
+    "speed": 59,
+    "efficiency": 45.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 799,
+      "temperature": 46,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 1,
+      "battery": 60,
+      "speed": 90
+    },
+    "speed": 59,
+    "efficiency": 57.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 45,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 0,
+      "battery": 59,
+      "speed": 60
+    },
+    "speed": 76,
+    "efficiency": 73.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 0,
+      "rain": 2,
+      "battery": 40,
+      "speed": 60
+    },
+    "speed": 58,
+    "efficiency": 75.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 100,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 3,
+      "battery": 60,
+      "speed": 100
+    },
+    "speed": 47,
+    "efficiency": 30.0,
+    "batteryMode": "Eco",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 45,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 3,
+      "battery": 40,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 53.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 0,
+      "battery": 60,
+      "speed": 60
+    },
+    "speed": 77,
+    "efficiency": 72.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 36,
+      "rain": 3,
+      "battery": 39,
+      "speed": 90
+    },
+    "speed": 45,
+    "efficiency": 34.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 3,
+      "battery": 25,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 22.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 3,
+      "battery": 100,
+      "speed": 90
+    },
+    "speed": 64,
+    "efficiency": 70.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 1,
+      "battery": 60,
+      "speed": 0
+    },
+    "speed": 62,
+    "efficiency": 61.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 2,
+      "battery": 70,
+      "speed": 120
+    },
+    "speed": 47,
+    "efficiency": 53.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 1000,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 0,
+      "battery": 24,
+      "speed": 120
+    },
+    "speed": 58,
+    "efficiency": 68.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 0,
+      "rain": 0,
+      "battery": 24,
+      "speed": 60
+    },
+    "speed": 74,
+    "efficiency": 82.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 0,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 25,
+      "rain": 3,
+      "battery": 20,
+      "speed": 90
+    },
+    "speed": 45,
+    "efficiency": 30.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 39,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 3,
+      "battery": 24,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 42.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 1,
+      "battery": 40,
+      "speed": 90
+    },
+    "speed": 70,
+    "efficiency": 62.0,
+    "batteryMode": "Energy Saving",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 46,
+      "humidity": 86,
+      "wind": 35,
+      "rain": 1,
+      "battery": 0,
+      "speed": 0
+    },
+    "speed": 45,
+    "efficiency": 29.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 600,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 2,
+      "battery": 70,
+      "speed": 120
+    },
+    "speed": 55,
+    "efficiency": 72.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 399,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 36,
+      "rain": 0,
+      "battery": 45,
+      "speed": 100
+    },
+    "speed": 62,
+    "efficiency": 49.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 599,
+      "temperature": 38,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 3,
+      "battery": 0,
+      "speed": 60
+    },
+    "speed": 45,
+    "efficiency": 34.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "LOW RESERVE"
+  },
+  {
+    "input": {
+      "irradiance": 400,
+      "temperature": 39,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 0,
+      "battery": 70,
+      "speed": 120
+    },
+    "speed": 77,
+    "efficiency": 55.0,
+    "batteryMode": "Eco",
+    "energyStatus": "MODERATE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 25,
+      "humidity": 50,
+      "wind": 26,
+      "rain": 1,
+      "battery": 60,
+      "speed": 0
+    },
+    "speed": 80,
+    "efficiency": 75.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 699,
+      "temperature": 25,
+      "humidity": 86,
+      "wind": 26,
+      "rain": 3,
+      "battery": 70,
+      "speed": 0
+    },
+    "speed": 62,
+    "efficiency": 56.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 850,
+      "temperature": 45,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 3,
+      "battery": 20,
+      "speed": 100
+    },
+    "speed": 45,
+    "efficiency": 33.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 38,
+      "humidity": 86,
+      "wind": 0,
+      "rain": 0,
+      "battery": 60,
+      "speed": 100
+    },
+    "speed": 89,
+    "efficiency": 91.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 900,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 25,
+      "rain": 0,
+      "battery": 45,
+      "speed": 0
+    },
+    "speed": 85,
+    "efficiency": 86.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "HIGH SOLAR INPUT"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 39,
+      "humidity": 50,
+      "wind": 35,
+      "rain": 0,
+      "battery": 70,
+      "speed": 120
+    },
+    "speed": 74,
+    "efficiency": 73.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 700,
+      "temperature": 25,
+      "humidity": 85,
+      "wind": 35,
+      "rain": 0,
+      "battery": 60,
+      "speed": 120
+    },
+    "speed": 79,
+    "efficiency": 80.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 899,
+      "temperature": 46,
+      "humidity": 85,
+      "wind": 36,
+      "rain": 0,
+      "battery": 20,
+      "speed": 60
+    },
+    "speed": 49,
+    "efficiency": 52.0,
+    "batteryMode": "Critical Conservation",
+    "energyStatus": "STABLE ENERGY"
+  },
+  {
+    "input": {
+      "irradiance": 849,
+      "temperature": 38,
+      "humidity": 85,
+      "wind": 26,
+      "rain": 3,
+      "battery": 59,
+      "speed": 120
+    },
+    "speed": 61,
+    "efficiency": 57.0,
+    "batteryMode": "Optimal",
+    "energyStatus": "STABLE ENERGY"
+  }
+]

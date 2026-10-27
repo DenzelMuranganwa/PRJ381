@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title><%= pageTitle || 'Route Navigation - IWOS' %></title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/css.css" />
+</head>
+<body class="mobile-body">
+
+  <div class="map-screen-wrapper">
+
+    <!-- Top Floating Controls -->
+    <div class="map-top-overlay">
+      <a href="/dashboard" class="map-back-btn" aria-label="Return to Dashboard">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </a>
+      
+      <div class="telemetry-pill-mini">
+        <span class="pulse-dot"></span>
+        <span id="headerWind"><%= Number.isFinite(piPosition.windKmh) ? `${piPosition.windKmh.toFixed(1)} km/h Wind` : 'Wind unavailable' %></span>
+      </div>
+    </div>
+
+    <!-- Map Viewport -->
+    <div class="map-viewport">
+      <div id="map"></div>
+    </div>
+
+    <!-- Bottom Sheet Panel -->
+    <div class="bottom-sheet-panel">
+      <div class="sheet-drag-handle"></div>
+
+      <!-- Current GPS Start Point -->
+      <div class="location-pill-box">
+        <div class="location-inner">
+          <svg class="loc-icon" viewBox="0 0 24 24" fill="none" stroke="#00e599" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <div>
+            <div class="location-sublabel">START POINT (PI GPS)</div>
+            <div class="location-name" id="startCoords">
+              <% if (hasGps) { %><%= piPosition.lat.toFixed(5) %>, <%= piPosition.lng.toFixed(5) %><% } else { %>Waiting for a fresh GPS fix<% } %>
+            </div>
+          </div>
+        </div>
+        <div class="sensor-tag" id="gpsStatusTag">
+          <span class="pulse-dot"></span>
+          <span><%= hasGps ? 'GPS FIX' : 'WAITING FOR GPS' %></span>
+        </div>
+      </div>
+
+      <!-- Destination Search Box with Uber-Style Autocomplete -->
+      <div class="destination-search-container">
+        <div class="destination-search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#7075f8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input 
+            type="text" 
+            id="destinationInput" 
+            class="destination-input" 
+            placeholder="Search address, landmark, or street..."
+            autocomplete="off"
+          />
+          <button type="button" id="clearSearchBtn" class="clear-search-btn">&times;</button>
+        </div>
+
+        <!-- Suggestions Dropdown List -->
+        <div id="suggestionsList" class="autocomplete-dropdown"></div>
+      </div>
+
+      <!-- Status Message Box -->
+      <div id="statusMessage"></div>
+
+      <!-- Route Evaluation Summary Box -->
+      <div id="routeSummary" class="route-summary-box">
+        <div class="metric-row">
+          <span>Distance / Time:</span>
+          <b id="resDistTime">—</b>
+        </div>
+        <div class="metric-row">
+          <span>Net Solar Drain:</span>
+          <b id="resNetEnergy">—</b>
+        </div>
+      </div>
+
+      <!-- Saved Places List -->
+      <div class="places-list-block">
+        <div class="places-section-label">SAVED RACE WAYPOINTS</div>
+        <div class="places-list">
+          <% if (typeof savedPlaces !== 'undefined' && savedPlaces.length > 0) { %>
+            <% savedPlaces.forEach(function(place) { %>
+              <div class="place-row" data-coords="<%= place.coords %>" data-name="<%= place.name %>">
+                <div class="place-left">
+                  <svg class="place-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polygon points="12 8 8 12 12 16 12 8"></polygon>
+                  </svg>
+                  <span class="place-name"><%= place.name %></span>
+                </div>
+                <span class="place-distance"><%= place.distance %></span>
+              </div>
+            <% }); %>
+          <% } %>
+        </div>
+      </div>
+
+      
+      <button type="button" id="startBtn" class="mobile-btn">Calculate Best Solar Route</button>
+      <a href="/dashboard" class="skip-action-link">Cancel & Return to Dashboard</a>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/session-sync.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let hasVehicleGps = <%- JSON.stringify(hasGps) %>;
+      let vehicleCoords = hasVehicleGps
+        ? [<%- JSON.stringify(piPosition.lat) %>, <%- JSON.stringify(piPosition.lng) %>]
+        : [-25.7479, 28.2293];
+      let currentWind = <%- JSON.stringify(piPosition.windKmh) %> ?? 0;
+
+      const map = L.map('map', { zoomControl: false }).setView(vehicleCoords, 14);
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      setTimeout(() => map.invalidateSize(), 200);
+
+      let vehicleMarker = hasVehicleGps ? L.circleMarker(vehicleCoords, {
+          radius: 8,
+          color: '#00e599',
+          fillColor: '#ffffff',
+          fillOpacity: 1,
+          weight: 3
+        }).addTo(map).bindPopup('Latest weather sensor GPS fix') : null;
+
+      const startCoords = document.getElementById('startCoords');
+      const gpsStatusTag = document.getElementById('gpsStatusTag');
+      const headerWind = document.getElementById('headerWind');
+      const updateVehicleFix = snapshot => {
+        const values = snapshot.weather?.values;
+        const fresh = snapshot.state === 'live'
+          && Number.isFinite(values?.latitude)
+          && Number.isFinite(values?.longitude);
+
+        if (!fresh) {
+          hasVehicleGps = false;
+          if (vehicleMarker) {
+            map.removeLayer(vehicleMarker);
+            vehicleMarker = null;
+          }
+          startCoords.textContent = 'Waiting for a fresh GPS fix';
+          gpsStatusTag.lastElementChild.textContent = 'NO GPS FIX';
+          headerWind.textContent = 'Wind unavailable';
+          return;
+        }
+
+        const nextCoords = [values.latitude, values.longitude];
+        const firstFix = !hasVehicleGps;
+        hasVehicleGps = true;
+        vehicleCoords = nextCoords;
+        currentWind = Number.isFinite(values.wind_speed_ms) ? values.wind_speed_ms * 3.6 : 0;
+        if (!vehicleMarker) {
+          vehicleMarker = L.circleMarker(nextCoords, {
+            radius: 8,
+            color: '#00e599',
+            fillColor: '#ffffff',
+            fillOpacity: 1,
+            weight: 3
+          }).addTo(map).bindPopup('Latest weather sensor GPS fix');
+        } else {
+          vehicleMarker.setLatLng(nextCoords);
+        }
+        if (firstFix) map.setView(nextCoords, 14);
+        startCoords.textContent = `${nextCoords[0].toFixed(5)}, ${nextCoords[1].toFixed(5)}`;
+        gpsStatusTag.lastElementChild.textContent = 'GPS FIX';
+        headerWind.textContent = Number.isFinite(values.wind_speed_ms)
+          ? `${currentWind.toFixed(1)} km/h Wind`
+          : 'Wind unavailable';
+      };
+
+      let gpsPollInFlight = false;
+      async function pollVehicleFix() {
+        if (gpsPollInFlight) return;
+        gpsPollInFlight = true;
+        try {
+          const response = await fetch('/api/status', {
+            cache: 'no-store',
+            signal: AbortSignal.timeout(5000),
+          });
+          if (!response.ok) throw new Error(`Telemetry status request failed with HTTP ${response.status}.`);
+          updateVehicleFix(await response.json());
+        } catch (error) {
+          console.warn('Route setup could not refresh vehicle GPS:', error);
+          updateVehicleFix({ state: 'offline' });
+        } finally {
+          gpsPollInFlight = false;
+          window.setTimeout(pollVehicleFix, 2000);
+        }
+      }
+      void pollVehicleFix();
+
+      let targetMarker = null;
+      let routePolylines = [];
+      let currentSelectedRoute = null;
+      let debounceTimer = null;
+      let suggestionRequestId = 0;
+      let routeCalculationInFlight = false;
+
+      const input = document.getElementById('destinationInput');
+      const clearBtn = document.getElementById('clearSearchBtn');
+      const startBtn = document.getElementById('startBtn');
+      const statusMsg = document.getElementById('statusMessage');
+      const routeSummary = document.getElementById('routeSummary');
+      const resDistTime = document.getElementById('resDistTime');
+      const resNetEnergy = document.getElementById('resNetEnergy');
+      const suggestionsList = document.getElementById('suggestionsList');
+
+      // 1. Live Autocomplete Search (Photon / Komoot API)
+      input.addEventListener('input', () => {
+        const query = input.value.trim();
+        clearBtn.style.display = query ? 'block' : 'none';
+
+        if (startBtn.textContent.startsWith('Start Trip')) {
+          startBtn.textContent = 'Calculate Best Solar Route';
+        }
+
+        clearTimeout(debounceTimer);
+        const requestId = ++suggestionRequestId;
+
+        // If query is short or already raw coordinates, close suggestions
+        if (query.length < 3 || /^[-+]?\d+(\.\d+)?[,\s]+[-+]?\d+(\.\d+)?$/.test(query)) {
+          suggestionsList.classList.remove('active');
+          suggestionsList.replaceChildren();
+          return;
+        }
+        if (!hasVehicleGps) {
+          statusMsg.textContent = 'Location search requires a fresh vehicle GPS fix.';
+          suggestionsList.classList.remove('active');
+          suggestionsList.replaceChildren();
+          return;
+        }
+
+        debounceTimer = setTimeout(async () => {
+          try {
+            const params = new URLSearchParams({
+              q: query,
+              lat: String(vehicleCoords[0]),
+              lon: String(vehicleCoords[1]),
+            });
+            const res = await fetch(`/api/route-suggestions?${params}`, {
+              cache: 'no-store',
+              signal: AbortSignal.timeout(9000),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Location search failed.');
+            if (requestId !== suggestionRequestId) return;
+            const features = data.suggestions || [];
+
+            if (features.length === 0) {
+              suggestionsList.classList.remove('active');
+              suggestionsList.replaceChildren();
+              return;
+            }
+
+            suggestionsList.replaceChildren();
+
+            features.forEach(feature => {
+              const item = document.createElement('div');
+              item.className = 'suggestion-item';
+              const details = document.createElement('div');
+              details.className = 'suggestion-details';
+              const primary = document.createElement('div');
+              primary.className = 'suggestion-primary';
+              primary.textContent = feature.name;
+              const secondary = document.createElement('div');
+              secondary.className = 'suggestion-secondary';
+              secondary.textContent = feature.secondary;
+              details.append(primary, secondary);
+              item.append(details);
+
+              item.addEventListener('click', () => {
+                input.value = feature.name + (feature.secondary ? `, ${feature.secondary}` : '');
+                suggestionsList.classList.remove('active');
+                suggestionsList.replaceChildren();
+                calculateRoute(`${feature.latitude}, ${feature.longitude}`, feature.name);
+              });
+
+              suggestionsList.appendChild(item);
+            });
+
+            suggestionsList.classList.add('active');
+
+          } catch (e) {
+            if (requestId !== suggestionRequestId) return;
+            console.warn('Autocomplete fetch failed:', e);
+            statusMsg.textContent = e.message || 'Location search failed.';
+          }
+        }, 400);
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.destination-search-container')) {
+          suggestionsList.classList.remove('active');
+        }
+      });
+
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.style.display = 'none';
+        suggestionsList.classList.remove('active');
+        suggestionsList.replaceChildren();
+        routeSummary.style.display = 'none';
+        startBtn.textContent = 'Calculate Best Solar Route';
+        if (targetMarker) map.removeLayer(targetMarker);
+        routePolylines.forEach(p => map.removeLayer(p));
+        routePolylines = [];
+      });
+
+      map.on('click', (e) => {
+        const coordsStr = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+        input.value = coordsStr;
+        clearBtn.style.display = 'block';
+        suggestionsList.classList.remove('active');
+        calculateRoute(coordsStr, 'Selected Map Location');
+      });
+
+      document.querySelectorAll('.place-row').forEach(row => {
+        row.addEventListener('click', () => {
+          input.value = row.dataset.name;
+          clearBtn.style.display = 'block';
+          suggestionsList.classList.remove('active');
+          calculateRoute(row.dataset.coords, row.dataset.name);
+        });
+      });
+
+      async function calculateRoute(destinationText, friendlyName) {
+        if (routeCalculationInFlight) return;
+        if (!hasVehicleGps) {
+          statusMsg.textContent = 'Route planning requires a fresh vehicle GPS fix.';
+          return;
+        }
+        if (!destinationText || !destinationText.trim()) {
+          statusMsg.textContent = 'Please enter a destination or click the map.';
+          return;
+        }
+
+        routeCalculationInFlight = true;
+        statusMsg.textContent = 'Calculating optimal solar track...';
+        startBtn.disabled = true;
+        startBtn.textContent = 'Evaluating Solar Balance...';
+
+        try {
+          const res = await fetch('/api/calculate-solar-route', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              startLat: vehicleCoords[0],
+              startLng: vehicleCoords[1],
+              destination: destinationText.trim(),
+              headwind: currentWind
+            })
+          });
+
+          const contentType = res.headers.get('content-type') || '';
+          if (!contentType.includes('application/json')) {
+            throw new Error(`Server returned HTTP ${res.status}. Check backend terminal.`);
+          }
+
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error);
+
+          statusMsg.textContent = '';
+
+          routePolylines.forEach(p => map.removeLayer(p));
+          routePolylines = [];
+          if (targetMarker) map.removeLayer(targetMarker);
+
+          targetMarker = L.circleMarker(data.destination, {
+            radius: 8,
+            color: '#7075f8',
+            fillColor: '#ffffff',
+            fillOpacity: 1,
+            weight: 3
+          }).addTo(map);
+
+          data.routes.forEach((route, idx) => {
+            const isBest = idx === 0;
+            const poly = L.polyline(route.coordinates, {
+              color: isBest ? '#7075f8' : '#334155',
+              weight: isBest ? 5 : 3,
+              opacity: isBest ? 0.95 : 0.5,
+              dashArray: isBest ? null : '5, 5'
+            }).addTo(map);
+
+            routePolylines.push(poly);
+          });
+
+          const bestRoute = data.routes[0];
+          currentSelectedRoute = {
+            ...bestRoute,
+            destinationCoords: data.destination,
+            destinationName: friendlyName || destinationText
+          };
+
+          map.fitBounds(routePolylines[0].getBounds(), { padding: [40, 40] });
+
+          routeSummary.style.display = 'flex';
+          resDistTime.textContent = `${bestRoute.distanceKm} km (${bestRoute.durationMin} mins)`;
+          resNetEnergy.textContent = `${bestRoute.netBatteryDrain > 0 ? '-' + bestRoute.netBatteryDrain : '+' + Math.abs(bestRoute.netBatteryDrain)} kWh`;
+
+          startBtn.disabled = false;
+          startBtn.textContent = `Start Trip (${bestRoute.distanceKm} km)`;
+
+        } catch (err) {
+          statusMsg.textContent = err.message || 'Route calculation failed.';
+          startBtn.textContent = 'Calculate Best Solar Route';
+        } finally {
+          routeCalculationInFlight = false;
+          startBtn.disabled = false;
+        }
+      }
+
+      startBtn.addEventListener('click', () => {
+        if (startBtn.textContent.startsWith('Start Trip')) {
+          if (currentSelectedRoute) {
+            localStorage.setItem('activeSolarNavigation', JSON.stringify({
+              isActive: true,
+              destinationName: currentSelectedRoute.destinationName || 'Destination',
+              destinationCoords: currentSelectedRoute.destinationCoords,
+              distanceKm: currentSelectedRoute.distanceKm,
+              durationMin: currentSelectedRoute.durationMin,
+              netBatteryDrain: currentSelectedRoute.netBatteryDrain,
+              coordinates: currentSelectedRoute.coordinates,
+              steps: currentSelectedRoute.steps || []
+            }));
+          }
+          window.location.href = '/dashboard';
+        } else {
+          calculateRoute(input.value);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
