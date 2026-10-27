@@ -144,6 +144,74 @@ test('account registration, login, protected pages, profile preferences, and log
   });
   assert.equal(badWindResponse.status, 400);
 
+  const originalFetch = global.fetch;
+  let elevationRequests = 0;
+  let elevationStatus = 200;
+  let routeGeometries = [
+    [[28.2293, -25.7479], [28.23, -25.75], [28.2312, -26.1325]],
+    [[28.2293, -25.7479], [28.235, -25.77], [28.24, -26.12]],
+  ];
+  global.fetch = async (input, options) => {
+    const url = new URL(input);
+    if (url.hostname === 'router.project-osrm.org') {
+      return new Response(JSON.stringify({
+        code: 'Ok',
+        routes: routeGeometries.map(coordinates => ({
+          distance: 1000,
+          duration: 100,
+          geometry: { coordinates },
+          legs: [{ steps: [] }],
+        })),
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (url.hostname === 'api.open-meteo.com') {
+      elevationRequests += 1;
+      return new Response(
+        elevationStatus === 200
+          ? JSON.stringify({
+            elevation: Array.from(
+              { length: url.searchParams.get('latitude').split(',').length },
+              (_, index) => 100 + index * 10,
+            ),
+          })
+          : JSON.stringify({ error: 'Rate limited' }),
+        { status: elevationStatus, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    return originalFetch(input, options);
+  };
+  try {
+    const routeRequest = () => request('/api/calculate-solar-route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        startLat: -25.7479,
+        startLng: 28.2293,
+        destination: '-26.1325, 28.2312',
+        headwind: 7.2,
+      }),
+    });
+    const firstRouteResponse = await routeRequest();
+    assert.equal(firstRouteResponse.status, 200);
+    const firstRoute = await firstRouteResponse.json();
+    assert.equal(firstRoute.routes.length, 2);
+    assert.equal(firstRoute.routes[0].elevationGainM, 20);
+    assert.equal(elevationRequests, 1);
+
+    const cachedRouteResponse = await routeRequest();
+    assert.equal(cachedRouteResponse.status, 200);
+    assert.equal(elevationRequests, 1);
+
+    routeGeometries = [[[28.2393, -25.7479], [28.24, -25.75], [28.2412, -26.1325]]];
+    elevationStatus = 429;
+    const rateLimitedResponse = await routeRequest();
+    assert.equal(rateLimitedResponse.status, 503);
+    assert.match((await rateLimitedResponse.json()).error, /elevation service is busy/i);
+    assert.equal(elevationRequests, 2);
+  } finally {
+    global.fetch = originalFetch;
+  }
+
   const themeResponse = await request('/settings/theme', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
