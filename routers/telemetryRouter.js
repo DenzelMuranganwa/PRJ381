@@ -32,6 +32,7 @@ function createTelemetryRouter(
     legacyHeaders: false,
     message: { success: false, error: 'Too many route calculations. Try again later.' },
   });
+  const elevationCache = new Map();
   const simulationTelemetryLimiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 20,
@@ -462,8 +463,7 @@ function createTelemetryRouter(
       const motorEff = 0.90;
       const panelEff = 0.22;
 
-      const evaluatedRoutes = [];
-
+      const routeCandidates = [];
       for (let i = 0; i < Math.min(osrmData.routes.length, 3); i++) {
         const r = osrmData.routes[i];
         if (!Number.isFinite(r.distance) || r.distance <= 0
@@ -480,18 +480,25 @@ function createTelemetryRouter(
         const sampled = coordinates.filter((_, index) => index % step === 0).slice(0, 100);
         const lastCoordinate = coordinates[coordinates.length - 1];
         if (sampled.at(-1) !== lastCoordinate && sampled.length < 100) sampled.push(lastCoordinate);
-        const elevationUrl = new URL('https://api.open-meteo.com/v1/elevation');
-        elevationUrl.searchParams.set('latitude', sampled.map(point => point[1]).join(','));
-        elevationUrl.searchParams.set('longitude', sampled.map(point => point[0]).join(','));
-        const elevationData = await fetchJson(elevationUrl, {}, 'Elevation service');
-        if (!Array.isArray(elevationData.elevation)
-          || elevationData.elevation.length !== sampled.length
-          || elevationData.elevation.some(value => !Number.isFinite(value))) {
-          throw new Error('Elevation service returned incomplete elevation data.');
-        }
+        routeCandidates.push({ route: r, index: i, durationSec, distanceM, avgSpeedMS, sampled });
+      }
+
+      if (!routeCandidates.length) {
+        return res.status(502).json({ success: false, error: 'The routing service returned no usable route.' });
+      }
+
+      const elevations = await getRouteElevations(
+        routeCandidates.flatMap(candidate => candidate.sampled),
+        elevationCache,
+      );
+      const evaluatedRoutes = [];
+
+      for (const candidate of routeCandidates) {
+        const { route: r, index, durationSec, distanceM, avgSpeedMS, sampled } = candidate;
+        const routeElevations = sampled.map(point => elevations.get(elevationKey(point)));
         let elevationGain = 0;
-        for (let index = 1; index < elevationData.elevation.length; index++) {
-          const difference = elevationData.elevation[index] - elevationData.elevation[index - 1];
+        for (let index = 1; index < routeElevations.length; index++) {
+          const difference = routeElevations[index] - routeElevations[index - 1];
           if (difference > 0) elevationGain += difference;
         }
 
@@ -521,7 +528,7 @@ function createTelemetryRouter(
         })) : [];
 
         evaluatedRoutes.push({
-          track: i + 1,
+          track: index + 1,
           distanceKm: (distanceM / 1000).toFixed(1),
           durationMin: Math.round(durationSec / 60),
           elevationGainM: Math.round(elevationGain),
@@ -546,12 +553,18 @@ function createTelemetryRouter(
       });
 
     } catch (error) {
-      console.error('Route calculation failed:', error);
+      if (error.code === 'UPSTREAM_RATE_LIMITED') {
+        console.warn('Route calculation paused because an external provider rate-limited the request.');
+      } else {
+        console.error('Route calculation failed:', error);
+      }
       res.status(error.status || 502).json({
         success: false,
-        error: error.status === 504
-          ? 'A routing data provider timed out. Try again shortly.'
-          : 'Route calculation is temporarily unavailable because a routing data provider failed.',
+        error: error.code === 'UPSTREAM_RATE_LIMITED'
+          ? 'The elevation service is busy. Please wait a few minutes before trying again.'
+          : error.status === 504
+            ? 'A routing data provider timed out. Try again shortly.'
+            : 'Route calculation is temporarily unavailable because a routing data provider failed.',
       });
     }
   });
@@ -595,7 +608,12 @@ async function fetchJson(url, options, provider) {
   }
   if (!response.ok) {
     const error = new Error(`${provider} returned HTTP ${response.status}.`);
-    error.status = 502;
+    if (response.status === 429) {
+      error.status = 503;
+      error.code = 'UPSTREAM_RATE_LIMITED';
+    } else {
+      error.status = 502;
+    }
     throw error;
   }
   try {
@@ -605,6 +623,56 @@ async function fetchJson(url, options, provider) {
     error.status = 502;
     throw error;
   }
+}
+
+const ELEVATION_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const ELEVATION_CACHE_MAX_ENTRIES = 5000;
+
+function elevationKey(point) {
+  return `${point[1]},${point[0]}`;
+}
+
+async function getRouteElevations(points, cache) {
+  const now = Date.now();
+  for (const [key, entry] of cache) {
+    if (entry.expiresAt <= now) cache.delete(key);
+  }
+
+  const missingPoints = new Map();
+  for (const point of points) {
+    const key = elevationKey(point);
+    if (!cache.has(key)) missingPoints.set(key, point);
+  }
+
+  if (missingPoints.size) {
+    const entries = [...missingPoints.entries()];
+    for (let offset = 0; offset < entries.length; offset += 100) {
+      const batch = entries.slice(offset, offset + 100);
+      const batchPoints = batch.map(([, point]) => point);
+      const elevationUrl = new URL('https://api.open-meteo.com/v1/elevation');
+      elevationUrl.searchParams.set('latitude', batchPoints.map(point => point[1]).join(','));
+      elevationUrl.searchParams.set('longitude', batchPoints.map(point => point[0]).join(','));
+      const elevationData = await fetchJson(elevationUrl, {}, 'Elevation service');
+      if (!Array.isArray(elevationData.elevation)
+        || elevationData.elevation.length !== batchPoints.length
+        || elevationData.elevation.some(value => !Number.isFinite(value))) {
+        throw new Error('Elevation service returned incomplete elevation data.');
+      }
+
+      const expiresAt = Date.now() + ELEVATION_CACHE_TTL_MS;
+      for (const [index, [key]] of batch.entries()) {
+        cache.set(key, { elevation: elevationData.elevation[index], expiresAt });
+      }
+      while (cache.size > ELEVATION_CACHE_MAX_ENTRIES) {
+        cache.delete(cache.keys().next().value);
+      }
+    }
+  }
+
+  return new Map(points.map(point => {
+    const key = elevationKey(point);
+    return [key, cache.get(key).elevation];
+  }));
 }
 
 function requireCsrf(req, res, next) {

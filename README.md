@@ -308,6 +308,12 @@ or vehicle-speed values into real hardware measurements.
 - Route calculations, location suggestions, and guest heartbeats are
   rate-limited. Route calculations validate coordinates and wind input, and
   return a provider error rather than treating unavailable elevation as zero.
+  Elevation samples for route alternatives are fetched in batches and cached in
+  process memory for six hours to reduce repeated requests. The public elevation
+  provider can still rate-limit hosted servers; when it does, route calculation
+  reports that it is busy and should be retried later. Successful elevation
+  data is required for the energy comparison, so the app does not invent an
+  elevation profile.
 - Registration collects account details only. Profile pictures can be added or
   changed later from Personalization & Settings; JPEG, PNG, GIF, and WebP
   uploads are limited to 5 MB and stored under `public/uploads/`. That
