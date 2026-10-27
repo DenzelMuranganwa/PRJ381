@@ -82,8 +82,10 @@ async function main() {
   const { server, address } = listening;
   const boundPort = typeof address === 'object' ? address.port : (process.env.PORT || config.port);
   console.log(`IWOS Field is running at http://localhost:${boundPort}`);
-  console.log(`Weather source: ${config.source}. Waiting for real sensor readings.`);
-  if (config.source === 'http' && !config.token) {
+  console.log(config.simulationEnabled
+    ? 'Telemetry mode: simulated feed enabled when the dashboard is open.'
+    : `Telemetry source: ${config.source}. Waiting for sensor readings.`);
+  if (config.source === 'http' && !config.token && !config.simulationEnabled) {
     console.log('Set SENSOR_API_TOKEN in .env to enable sensor ingestion.');
   }
 
