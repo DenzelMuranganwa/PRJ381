@@ -117,6 +117,10 @@ test('HTTP ingestion, authentication, page rendering, limits and malformed JSON'
     assert.equal(response.status,302);assert.equal(response.headers.get('location'),'/signin');
   }
   for(const route of ['/telemetry.js','/session-sync.js','/integration.css']) assert.equal((await fetch(url+route)).status,200);
+  for (const route of ['/iwos-logo.svg', '/iwos-icon.svg', '/iwos-dashboard-qr.svg', '/iwos-dashboard-qr.png']) {
+    const asset = await fetch(url + route);
+    assert.equal(asset.status, 200, `${route} should be publicly available`);
+  }
 });
 
 test('browser simulation feed uses the telemetry store and enables complete optimization', async t => {

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 88" role="img" aria-labelledby="title description">
+  <title id="title">IWOS Field</title>
+  <desc id="description">IWOS Field weather telemetry and route dashboard</desc>
+  <rect x="2" y="2" width="84" height="84" rx="20" fill="#101821" stroke="#263747" stroke-width="2"/>
+  <circle cx="65" cy="23" r="8" fill="#00e599"/>
+  <path d="M22 43h37l-7 23H15z" fill="#182634" stroke="#00e599" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M19 54h37M31 44l-4 21M44 44l-4 21" fill="none" stroke="#577083" stroke-width="1.5"/>
+  <path d="M20 73c13 0 17-11 29-11 9 0 12-6 16-17" fill="none" stroke="#8589ff" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="65" cy="43" r="4" fill="#8589ff"/>
+  <text x="104" y="47" fill="#f3f7fb" font-family="Arial, Helvetica, sans-serif" font-size="35" font-weight="800" letter-spacing="1.5">IWOS</text>
+  <text x="107" y="69" fill="#00e599" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="700" letter-spacing="3.1">FIELD TELEMETRY</text>
+</svg>
